@@ -5,6 +5,7 @@ import { KID_AVATARS, avatarSrc } from "../accounts.js";
 import { play, setSoundEnabled, setVolume } from "../audio.js";
 import { exportBackup, importBackup } from "../backup.js";
 import { animalById } from "../animals.js";
+import { APP_VERSION } from "../constants.js";
 
 export function render() {
   const a = currentAccount();
@@ -65,6 +66,7 @@ export function render() {
         <p class="muted" style="margin-top:8px">iPad 本地存储可能被系统清理，建议定期导出备份。</p>
       </div>
     </div>
+    <p class="muted center" style="margin-top:6px;font-size:13px">应用版本 v${APP_VERSION}</p>
   `;
   mountScreen(wrap);
 

@@ -1,6 +1,8 @@
-// Service Worker —— 离线缓存应用外壳
-const CACHE = "lucky-star-v1";
-const ASSETS = [
+// Service Worker —— 离线缓存
+// 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
+const CACHE = "lucky-star-v2";
+
+const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
@@ -45,29 +47,55 @@ const ASSETS = [
   "./assets/icons/icon-512.png",
   "./assets/icons/apple-touch-icon.png",
   "./assets/avatars/kid-boy.svg",
-  "./assets/avatars/kid-girl.svg"
+  "./assets/avatars/kid-girl.svg",
 ];
 
+const NETWORK_FIRST = new Set(["document", "script", "style", "manifest"]);
+
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()).catch(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const res = await fetch(request);
+    if (res && res.ok) cache.put(request, res.clone());
+    return res;
+  } catch (err) {
+    const hit = await cache.match(request);
+    if (hit) return hit;
+    if (request.mode === "navigate") {
+      const idx = await cache.match("./index.html");
+      if (idx) return idx;
+    }
+    return Response.error();
+  }
+}
+
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const res = await fetch(request);
+  if (res && res.ok) cache.put(request, res.clone());
+  return res;
+}
+
 self.addEventListener("fetch", (e) => {
   const { request } = e;
   if (request.method !== "GET") return;
-  // 同源资源：缓存优先，回退网络
-  e.respondWith(
-    caches.match(request).then((hit) => hit || fetch(request).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
-      return res;
-    }).catch(() => caches.match("./index.html")))
-  );
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  e.respondWith(NETWORK_FIRST.has(request.destination) ? networkFirst(request) : cacheFirst(request));
 });

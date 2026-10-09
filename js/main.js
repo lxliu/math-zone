@@ -1,5 +1,6 @@
 // 应用入口
 import { currentAccount } from "./store.js";
+import { APP_VERSION } from "./constants.js";
 import { register, setGuard, startRouter, currentRoute, go } from "./router.js";
 import { renderNavbar } from "./ui.js";
 import { setSoundEnabled, setVolume, unlockAudio } from "./audio.js";
@@ -41,11 +42,19 @@ if (acc?.settings) {
 window.addEventListener("pointerdown", () => unlockAudio(), { once: true });
 
 startRouter();
+console.log(`幸运星计算乐园 v${APP_VERSION}`);
 
 // 注册 Service Worker（仅 http/https）
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW 注册失败", e));
+  });
+  // 新版 Service Worker 接管后自动刷新一次，避免停留在旧缓存
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded) return;
+    reloaded = true;
+    location.reload();
   });
 }
 
