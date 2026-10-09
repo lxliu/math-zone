@@ -1,36 +1,19 @@
-// 每日会话状态机：出题 / 计分 / 错题循环 / 续做
+// 每日会话状态机：按家长配置组卷 / 计分 / 错题循环 / 续做
 import { currentAccount, commit } from "./store.js";
 import { todayKey, answersEqual } from "./utils.js";
 import { buildQuestions } from "./questions/index.js";
-import { dayTotalStars } from "./scoring.js";
-import { QUESTIONS_PER_DAY } from "./constants.js";
+import { getConfig, totalStars } from "./config.js";
 
-export const gameState = {
-  difficulty: "mixed",
-  session: null,
-  lastResult: null,
-};
-
-export function setDifficulty(d) { gameState.difficulty = d; }
-export function getDifficulty() { return gameState.difficulty; }
+export const gameState = { session: null, lastResult: null };
 
 export function todaySession() {
   const a = currentAccount();
   return (a && a.sessions[todayKey()]) || null;
 }
 
-export function dayTarget() { return dayTotalStars(gameState.difficulty); }
-
-// 放弃/重新开始：删除今天会话
-export function resetTodaySession() {
-  const a = currentAccount();
-  if (!a) return;
-  const key = todayKey();
-  commit((st) => {
-    const acc = st.accounts.find((x) => x.id === a.id);
-    if (acc) delete acc.sessions[key];
-  });
-  gameState.session = null;
+// 今日满额幸运星（按家长配置）
+export function dayTarget() {
+  return totalStars(getConfig(currentAccount()));
 }
 
 function persistSession() {
@@ -43,20 +26,38 @@ function persistSession() {
   });
 }
 
-// 开始或恢复今天的会话
+export function resetTodaySession() {
+  const a = currentAccount();
+  if (!a) return;
+  const key = todayKey();
+  commit((st) => {
+    const acc = st.accounts.find((x) => x.id === a.id);
+    if (acc) delete acc.sessions[key];
+  });
+  gameState.session = null;
+}
+
+// 开始或恢复今天的会话（旧格式会话自动作废重建）
 export function startOrResume() {
   const a = currentAccount();
   const key = todayKey();
   const existing = a?.sessions?.[key];
-  if (existing && !existing.completed && Array.isArray(existing.questions)) {
+  const usable =
+    existing &&
+    !existing.completed &&
+    Array.isArray(existing.questions) &&
+    existing.questions.length > 0 &&
+    existing.config;
+  if (usable) {
     gameState.session = existing;
-    gameState.difficulty = existing.difficulty;
     return existing;
   }
-  const qs = buildQuestions(gameState.difficulty, QUESTIONS_PER_DAY);
+
+  const config = getConfig(a);
+  const qs = buildQuestions(config);
   const s = {
     date: key,
-    difficulty: gameState.difficulty,
+    config,
     questions: qs,
     queue: qs.map((_, i) => i),
     pos: 0,
@@ -99,7 +100,6 @@ export function submitAnswer(value) {
   return { correct, question: q };
 }
 
-// 一题结束后推进：下一题 / 进入重做轮 / 完成
 export function advance() {
   const s = gameState.session;
   if (!s) return { type: "done" };
@@ -139,7 +139,6 @@ function completeSession() {
   });
   gameState.lastResult = {
     date: s.date,
-    difficulty: s.difficulty,
     starsEarned: s.starsEarned,
     totalTimeMs: s.totalTimeMs,
     total: s.questions.length,

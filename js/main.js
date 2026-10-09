@@ -9,7 +9,7 @@ import { setSoundEnabled, setVolume, unlockAudio } from "./audio.js";
 
 import * as setup from "./screens/setup.js";
 import * as today from "./screens/today.js";
-import * as difficulty from "./screens/difficulty.js";
+import * as parent from "./screens/parent.js";
 import * as play from "./screens/play.js";
 import * as result from "./screens/result.js";
 import * as calendar from "./screens/calendar.js";
@@ -19,7 +19,7 @@ import * as dev from "./screens/dev.js";
 
 register("setup", setup.render);
 register("today", today.render);
-register("difficulty", difficulty.render);
+register("parent", parent.render);
 register("play", play.render, play.cleanup);
 register("result", result.render);
 register("calendar", calendar.render);

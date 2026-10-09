@@ -79,3 +79,6 @@
   .problem { font-size: 48px; }
   .quick-grid, .diff-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* 长题干（方程 / 混合式）自适应字号 */
+.problem.long { font-size: clamp(17px, 3.2vw, 30px); line-height: 1.4; letter-spacing: 1px; }

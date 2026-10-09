@@ -1,6 +1,8 @@
 // 答题页：数字键盘 + 星星罐（暂存）+ 错题循环；计时全程隐藏
 import { mountScreen, toast, modal } from "../ui.js";
 import { go } from "../router.js";
+import { currentAccount } from "../store.js";
+import { getConfig, totalQuestions } from "../config.js";
 import { play as sfx, unlockAudio } from "../audio.js";
 import { createKeypad } from "../keypad.js";
 import {
@@ -19,6 +21,11 @@ export function render() {
   const existing = todaySession();
   if (existing?.completed) {
     toast("今天已经完成啦，明天再来～");
+    go("today");
+    return;
+  }
+  if (totalQuestions(getConfig(currentAccount())) === 0) {
+    toast("家长还没配置题量");
     go("today");
     return;
   }
@@ -129,11 +136,15 @@ function paint() {
   if (!wrap) return;
   wrap.querySelector("#p-round").textContent = s.round > 1 ? `重做第 ${s.round - 1} 轮` : "第 1 轮";
   wrap.querySelector("#p-count").textContent = `第 ${s.pos + 1}/${s.queue.length} 题`;
-  wrap.querySelector("#p-problem").textContent = `${q.text} = ?`;
+  const isEq = q.type === 6;
+  const problemText = isEq ? q.text : `${q.text} = ?`;
+  const pEl = wrap.querySelector("#p-problem");
+  pEl.textContent = problemText;
+  pEl.className = "problem" + (problemText.length > 16 ? " long" : "");
   const ansEl = wrap.querySelector("#p-answer");
   ansEl.textContent = " ";
   ansEl.className = "answer-display";
-  wrap.querySelector("#p-hint").textContent = "";
+  wrap.querySelector("#p-hint").textContent = isEq ? "求 x = ?" : "";
 
   const target = dayTarget();
   const pct = target ? Math.min(100, Math.round((s.pendingStars / target) * 100)) : 0;
@@ -158,7 +169,7 @@ function onPause() {
     bodyHtml: `<p class="muted">进度已自动保存，随时可以回来继续。</p>`,
     actions: [
       { label: "继续做题", kind: "green", onClick: () => { problemStart = Date.now(); } },
-      { label: "重新开始", kind: "ghost", onClick: () => { cleanup(); resetTodaySession(); go("difficulty"); } },
+      { label: "重新开始", kind: "ghost", onClick: () => { cleanup(); resetTodaySession(); render(); } },
       { label: "回主页", kind: "ghost", onClick: () => go("today") },
     ],
   });

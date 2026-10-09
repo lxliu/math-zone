@@ -1,51 +1,24 @@
-// 组卷：4 难度 + 巧算 + 综合
-import * as level1 from "./level1.js";
-import * as level2 from "./level2.js";
-import * as level3 from "./level3.js";
-import * as level4 from "./level4.js";
-import * as tricks from "./tricks.js";
-import { QUESTIONS_PER_DAY, MIXED_PER_TYPE } from "../constants.js";
-import { STAR_PER_QUESTION } from "../scoring.js";
+// 按家长配置组卷：类型 1→6 分组，组内打乱
+import { QUESTION_TYPES, STARS_PER_QUESTION } from "../config.js";
+import { shuffle } from "../utils.js";
+import { GENERATORS } from "./types.js";
 
-const GENERATORS = { 1: level1, 2: level2, 3: level3, 4: level4 };
-
-// 难度4 会混入巧算
-export function generateOne(level) {
-  if (level === 4) {
-    const useTrick = Math.random() < 0.5;
-    return (useTrick ? tricks.generate() : level4.generate());
-  }
-  return GENERATORS[level]?.generate() ?? null;
-}
-
-function withStars(q) {
-  return { ...q, stars: STAR_PER_QUESTION[q.level] || 1 };
-}
-
-// 生成一组题（默认 20 题，题面去重）
-export function buildQuestions(difficultyId, count = QUESTIONS_PER_DAY) {
-  const seen = new Set();
+export function buildQuestions(config) {
   const out = [];
-  const take = (level) => {
-    for (let i = 0; i < 40; i++) {
-      const q = generateOne(level);
-      if (q && !seen.has(q.text)) {
-        seen.add(q.text);
-        out.push(withStars(q));
-        return true;
-      }
-    }
-    return false;
-  };
-
-  if (String(difficultyId) === "mixed") {
-    for (const lv of [1, 2, 3, 4]) {
-      for (let i = 0; i < MIXED_PER_TYPE; i++) take(lv);
-    }
-  } else {
-    const lv = Number(difficultyId);
+  for (const t of QUESTION_TYPES) {
+    const n = config[t.id] || 0;
+    if (!n) continue;
+    const seen = new Set();
+    const list = [];
     let guard = 0;
-    while (out.length < count && guard++ < count * 30) take(lv);
+    while (list.length < n && guard++ < n * 50) {
+      let qp = null;
+      try { qp = GENERATORS[t.id](); } catch (e) { qp = null; }
+      if (!qp || seen.has(qp.text)) continue;
+      seen.add(qp.text);
+      list.push({ ...qp, stars: STARS_PER_QUESTION });
+    }
+    for (const qp of shuffle(list)) out.push(qp);
   }
   return out;
 }

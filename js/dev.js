@@ -1,5 +1,7 @@
-// 开发调试：仅本机(127.0.0.1)且带 ?dev=1 时启用
-const PASSWORD = "test123456";
+// 开发调试：仅本机(127.0.0.1)且带 ?dev=1 时启用；密码与家长设置共用
+import { checkPassword } from "./gate.js";
+
+export { checkPassword };
 
 export function isDevEnabled() {
   try {
@@ -10,6 +12,4 @@ export function isDevEnabled() {
   }
 }
 
-export function checkDevPassword(pw) {
-  return String(pw) === PASSWORD;
-}
+export const checkDevPassword = checkPassword;

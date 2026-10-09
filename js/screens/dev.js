@@ -7,8 +7,8 @@ import { play as sfx } from "../audio.js";
 import { todayKey, el } from "../utils.js";
 import { isDevEnabled, checkDevPassword } from "../dev.js";
 import { openAnimal3D } from "./animals.js";
-import { resetTodaySession, gameState } from "../game.js";
-import { dayTotalStars } from "../scoring.js";
+import { resetTodaySession } from "../game.js";
+import { getConfig, totalStars } from "../config.js";
 import { clearState } from "../storage.js";
 import { exportBackup, importBackup } from "../backup.js";
 
@@ -90,6 +90,7 @@ export function render() {
       <div class="chips" id="misc">
         <span class="chip" data-act="reset-today">重置今天</span>
         <span class="chip" data-act="complete-today">标记今天完成</span>
+        <span class="chip" data-act="parent">家长设置</span>
         <span class="chip" data-act="export">导出备份</span>
         <span class="chip" data-act="import">导入备份</span>
         <span class="chip" data-act="clear">清空全部数据</span>
@@ -158,11 +159,12 @@ export function render() {
     const act = c.dataset.act;
     if (act === "reset-today") { resetTodaySession(); toast("今天的进度已重置"); }
     else if (act === "complete-today") {
-      const t = dayTotalStars(gameState.difficulty || "mixed");
+      const cfg = getConfig(a);
+      const t = totalStars(cfg);
       commit((s) => {
         const acc = s.accounts.find((x) => x.id === a.id);
         acc.sessions[todayKey()] = {
-          date: todayKey(), difficulty: gameState.difficulty || "mixed", completed: true,
+          date: todayKey(), completed: true, config: cfg,
           starsEarned: t, questions: [], queue: [], pos: 0, round: 1, correctIds: [],
           firstTryCorrect: 0, attempts: {}, pendingStars: t, totalTimeMs: 0,
         };
@@ -170,6 +172,8 @@ export function render() {
       });
       toast(`已标记今天完成 +${t}⭐`);
       render();
+    } else if (act === "parent") {
+      go("parent");
     } else if (act === "export") exportBackup();
     else if (act === "import") wrap.querySelector("#dev-import").click();
     else if (act === "clear") {

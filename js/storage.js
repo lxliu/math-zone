@@ -39,6 +39,7 @@ function migrate(data) {
     if (!Array.isArray(a.ownedAnimals)) a.ownedAnimals = [];
     if (!a.sessions || typeof a.sessions !== "object") a.sessions = {};
     if (!a.settings) a.settings = { sound: true, volume: 0.7 };
+    if (!a.questionsConfig || typeof a.questionsConfig !== "object") a.questionsConfig = { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3 };
   }
   return data;
 }
