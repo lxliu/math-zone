@@ -189,3 +189,7 @@
 .reveal-card.rare .reveal-front { box-shadow: 0 0 0 4px var(--tier-rare), 0 0 34px var(--tier-rare); }
 .reveal-card.epic .reveal-front { box-shadow: 0 0 0 4px var(--tier-epic), 0 0 40px var(--tier-epic); }
 .reveal-card.legend .reveal-front { box-shadow: 0 0 0 4px var(--tier-legend), 0 0 48px var(--tier-legend); }
+
+/* ================= 真 3D 舞台（three.js） ================= */
+.three-stage { position: relative; width: 100%; height: 380px; border-radius: var(--radius-md); overflow: hidden; background: radial-gradient(circle at 50% 32%, #ffffff, #eef4fb 70%); }
+.three-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }

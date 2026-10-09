@@ -6,6 +6,7 @@ import { play as sfx } from "../audio.js";
 import { tryUnlock } from "../shop.js";
 import { confetti } from "../anim.js";
 import { el } from "../utils.js";
+import { open3DModel } from "../threeViewer.js";
 
 export function render() {
   const a = currentAccount();
@@ -148,8 +149,13 @@ function unlockRitual(animal) {
   });
 }
 
-/* ---------------- 悬浮自转 3D 查看（全身，缺失则头像兜底） ---------------- */
+/* ---------------- 真 3D 优先；无模型则回退悬浮自转 ---------------- */
 function open3D(animal) {
+  if (open3DModel(animal)) return;
+  open3DFloat(animal);
+}
+
+function open3DFloat(animal) {
   const tier = TIERS.find((t) => t.id === animal.tier);
   const root = document.getElementById("overlay-root");
   const backdrop = el("div", "backdrop");
