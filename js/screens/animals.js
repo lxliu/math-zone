@@ -49,7 +49,7 @@ export function render() {
 
       if (a.ownedAnimals.includes(animal.id)) {
         sfx("button");
-        open3D(animal);
+        openAnimal3D(animal);
         return;
       }
       if (a.stars < animal.price) {
@@ -71,6 +71,7 @@ export function render() {
               if (tryUnlock(a.id, animal.id)) {
                 await unlockRitual(animal);
                 render();
+                openAnimal3D(animal); // 翻牌后自动进入 3D 查看
               }
             },
           },
@@ -150,7 +151,7 @@ function unlockRitual(animal) {
 }
 
 /* ---------------- 真 3D 优先；无模型则回退悬浮自转 ---------------- */
-function open3D(animal) {
+export function openAnimal3D(animal) {
   if (open3DModel(animal)) return;
   open3DFloat(animal);
 }

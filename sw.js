@@ -1,6 +1,6 @@
 // Service Worker —— 离线缓存
 // 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
-const CACHE = "lucky-star-v4";
+const CACHE = "lucky-star-v5";
 
 const CORE = [
   "./",
@@ -28,6 +28,8 @@ const CORE = [
   "./js/constants.js",
   "./js/keypad.js",
   "./js/backup.js",
+  "./js/dev.js",
+  "./js/screens/dev.js",
   "./js/questions/index.js",
   "./js/questions/level1.js",
   "./js/questions/level2.js",

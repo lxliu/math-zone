@@ -1,6 +1,8 @@
 // 应用入口
-import { currentAccount } from "./store.js";
+import { currentAccount, commit } from "./store.js";
 import { APP_VERSION } from "./constants.js";
+import { ANIMALS, animalById } from "./animals.js";
+import { openAnimal3D } from "./screens/animals.js";
 import { register, setGuard, startRouter, currentRoute, go } from "./router.js";
 import { renderNavbar } from "./ui.js";
 import { setSoundEnabled, setVolume, unlockAudio } from "./audio.js";
@@ -13,6 +15,7 @@ import * as result from "./screens/result.js";
 import * as calendar from "./screens/calendar.js";
 import * as animals from "./screens/animals.js";
 import * as settings from "./screens/settings.js";
+import * as dev from "./screens/dev.js";
 
 register("setup", setup.render);
 register("today", today.render);
@@ -22,6 +25,7 @@ register("result", result.render);
 register("calendar", calendar.render);
 register("animals", animals.render);
 register("settings", settings.render);
+register("dev", dev.render);
 
 // 守卫：无账号 -> setup；有账号但停在 setup -> today
 setGuard((name) => {
@@ -58,5 +62,33 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   });
 }
 
-// 调试用
-window.__lucky = { currentRoute, go, refreshNav: renderNavbar };
+// 调试用控制台 API（Mac 上 DevTools 可直接调用）
+window.__lucky = {
+  currentRoute,
+  go,
+  refreshNav: renderNavbar,
+  account: currentAccount,
+  grantStars(n = 1000) {
+    const a = currentAccount();
+    if (a) commit((s) => { s.accounts.find((x) => x.id === a.id).stars += Number(n) || 0; });
+    renderNavbar();
+    return currentAccount()?.stars;
+  },
+  setStars(n = 0) {
+    const a = currentAccount();
+    if (a) commit((s) => { s.accounts.find((x) => x.id === a.id).stars = Math.max(0, Number(n) || 0); });
+    renderNavbar();
+    return currentAccount()?.stars;
+  },
+  unlockAll() {
+    const a = currentAccount();
+    if (a) commit((s) => { s.accounts.find((x) => x.id === a.id).ownedAnimals = ANIMALS.map((x) => x.id); });
+    renderNavbar();
+    return currentAccount()?.ownedAnimals.length;
+  },
+  view3d(id) {
+    const an = animalById(id) || ANIMALS.find((x) => x.name === id);
+    if (an) openAnimal3D(an);
+  },
+  animals: ANIMALS,
+};

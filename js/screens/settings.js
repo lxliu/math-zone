@@ -6,6 +6,9 @@ import { play, setSoundEnabled, setVolume } from "../audio.js";
 import { exportBackup, importBackup } from "../backup.js";
 import { animalById } from "../animals.js";
 import { APP_VERSION } from "../constants.js";
+import { go } from "../router.js";
+import { isDevEnabled } from "../dev.js";
+import { promptDevPassword } from "./dev.js";
 
 export function render() {
   const a = currentAccount();
@@ -67,10 +70,12 @@ export function render() {
       </div>
     </div>
     <p class="muted center" style="margin-top:6px;font-size:13px">应用版本 v${APP_VERSION}</p>
+    ${isDevEnabled() ? `<button class="btn ghost block" id="dev-btn" style="margin-top:12px">🛠 调试</button>` : ""}
   `;
   mountScreen(wrap);
 
   wrap.querySelector("#switch").addEventListener("click", () => { play("button"); openAccountSwitch(); });
+  wrap.querySelector("#dev-btn")?.addEventListener("click", () => { play("button"); promptDevPassword(() => go("dev")); });
 
   wrap.querySelectorAll("#avatars .avatar-choice").forEach((c) =>
     c.addEventListener("click", () => {
