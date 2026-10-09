@@ -93,14 +93,14 @@ export function build() {
 
   // 口鼻（奶油色锥，沿朝下前方）
   const sdir = new THREE.Vector3(0, -0.28, 0.96);
-  const snout = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 6), creamMat);
-  snout.position.copy(onSphere(HEAD_C, HEAD_R + 0.12, sdir));
-  snout.quaternion.setFromUnitVectors(UP, sdir.clone().normalize());
-  snout.castShadow = true;
-  g.add(snout);
+  const muzzle = new THREE.Mesh(ico(0.3, 1), creamMat);
+  muzzle.position.copy(onSphere(HEAD_C, HEAD_R + 0.02, sdir));
+  muzzle.scale.set(1.0, 0.85, 1.35);
+  muzzle.castShadow = true;
+  g.add(muzzle);
 
-  const nose = new THREE.Mesh(ico(0.12, 0), darkMat);
-  nose.position.copy(onSphere(HEAD_C, HEAD_R + 0.34, sdir));
+  const nose = new THREE.Mesh(ico(0.12, 1), darkMat);
+  nose.position.copy(onSphere(HEAD_C, HEAD_R + 0.4, sdir));
   g.add(nose);
 
   const mouth = new THREE.Mesh(ico(0.1, 0), darkMat);
@@ -111,11 +111,11 @@ export function build() {
   // 眼睛：白底 + 瞳孔 + 高光，按方向贴在脸球表面
   for (const sx of [-1, 1]) {
     const eyeDir = new THREE.Vector3(0.46 * sx, 0.36, 0.81);
-    const white = new THREE.Mesh(ico(0.17, 0), whiteMat);
+    const white = new THREE.Mesh(ico(0.17, 1), whiteMat);
     white.position.copy(onSphere(HEAD_C, HEAD_R, eyeDir));
     white.castShadow = true;
     g.add(white);
-    const pupil = new THREE.Mesh(ico(0.115, 0), darkMat);
+    const pupil = new THREE.Mesh(ico(0.115, 1), darkMat);
     pupil.position.copy(onSphere(HEAD_C, HEAD_R + 0.07, eyeDir));
     g.add(pupil);
     const shine = new THREE.Mesh(ico(0.05, 0), whiteMat);

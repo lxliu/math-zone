@@ -76,20 +76,26 @@ export function open3DModel(animal) {
 
   const targetY = bbox.min.y + size.y * 0.5;
 
-  // 相机 / 控制
+  // 相机 / 控制（缩放参照手机照片：幅度大、可贴近）
+  const modelR = Math.max(0.6, size.length() * 0.5);
   const dist = Math.max(3.6, size.length() * 1.15);
+  camera.near = 0.05;
   camera.position.set(dist * 0.15, targetY + size.y * 0.55, dist);
+  camera.updateProjectionMatrix();
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
+  controls.dampingFactor = 0.09;
   controls.enablePan = false;
   controls.autoRotate = true;
   controls.autoRotateSpeed = 1.6;
-  controls.minDistance = dist * 0.55;
-  controls.maxDistance = dist * 1.9;
-  controls.minPolarAngle = 0.4;
-  controls.maxPolarAngle = 1.52;
+  controls.zoomSpeed = 1.5;
+  controls.zoomToCursor = false;
+  controls.minDistance = Math.max(1.1, modelR * 0.9);
+  controls.maxDistance = dist * 4.5;
+  controls.minPolarAngle = 0.35;
+  controls.maxPolarAngle = 1.55;
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
   controls.target.set(0, targetY, 0);
   controls.update();
 
@@ -133,6 +139,7 @@ export function open3DModel(animal) {
   box.querySelector('[data-act="reset"]').addEventListener("click", () => {
     camera.position.set(dist * 0.15, targetY + size.y * 0.55, dist);
     controls.target.set(0, targetY, 0);
+    controls.zoomSpeed = 1.5;
     controls.update();
   });
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
