@@ -126,7 +126,8 @@ export function openAccountSwitch() {
           switchAccount(a.id);
           close();
           renderNavbar();
-          if (location.hash.replace(/^#\/?/, "") === "setup") location.hash = "#/today";
+          const p = location.hash.replace(/^#\/?/, "");
+          if (p === "setup" || p === "setup/new") location.hash = "#/today";
           else window.dispatchEvent(new HashChangeEvent("hashchange"));
         });
         list.appendChild(item);
@@ -134,7 +135,7 @@ export function openAccountSwitch() {
       box.querySelector("#acct-new").addEventListener("click", () => {
         play("button");
         close();
-        location.hash = "#/setup";
+        location.hash = "#/setup/new";
       });
     },
   });

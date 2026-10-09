@@ -6,13 +6,19 @@ let prevCleanup = null;
 export function register(name, render, cleanup) { routes.set(name, { render, cleanup }); }
 export function setGuard(fn) { guardFn = fn; }
 
+// 完整路由路径，如 "today" / "setup/new"
+export function routePath() {
+  return location.hash.replace(/^#\/?/, "") || "today";
+}
+
 export function currentRoute() {
-  return (location.hash.replace(/^#\/?/, "") || "today").split("/")[0];
+  return routePath().split("/")[0];
 }
 
 export async function handleRoute() {
-  const name = currentRoute();
-  if (!guardFn(name)) return;
+  const path = routePath();
+  const name = path.split("/")[0];
+  if (!guardFn(name, path)) return;
   if (prevCleanup) {
     try { prevCleanup(); } catch (e) { console.warn("cleanup failed", e); }
     prevCleanup = null;

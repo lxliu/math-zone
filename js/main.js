@@ -3,7 +3,7 @@ import { currentAccount, commit } from "./store.js";
 import { APP_VERSION } from "./constants.js";
 import { ANIMALS, animalById } from "./animals.js";
 import { openAnimal3D } from "./screens/animals.js";
-import { register, setGuard, startRouter, currentRoute, go } from "./router.js";
+import { register, setGuard, startRouter, currentRoute, routePath, go } from "./router.js";
 import { renderNavbar } from "./ui.js";
 import { setSoundEnabled, setVolume, unlockAudio } from "./audio.js";
 
@@ -27,11 +27,12 @@ register("animals", animals.render);
 register("settings", settings.render);
 register("dev", dev.render);
 
-// 守卫：无账号 -> setup；有账号但停在 setup -> today
-setGuard((name) => {
+// 守卫：无账号 -> setup；有账号但停在 setup -> today（setup/new 除外，允许新增账号）
+setGuard((name, path) => {
   const has = !!currentAccount();
+  const isNewAccount = path === "setup/new";
   if (!has && name !== "setup") { location.replace("#/setup"); return false; }
-  if (has && name === "setup") { location.replace("#/today"); return false; }
+  if (has && name === "setup" && !isNewAccount) { location.replace("#/today"); return false; }
   return true;
 });
 
