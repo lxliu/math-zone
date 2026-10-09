@@ -1,11 +1,11 @@
-// 六类题目的生成器
+// 八类题目的生成器
 import { randInt } from "../utils.js";
 
 const round = (x) => Number(x.toFixed(6));
 const fmt = (n) => (Number.isInteger(n) ? String(n) : String(Number(n.toFixed(6))));
 const q = (type, text, answer) => ({ type, text, answer });
 
-// 生成 p 位小数
+// p 位小数
 function dec(p, min, max) {
   return Number((randInt(min, max) / 10 ** p).toFixed(p));
 }
@@ -19,7 +19,7 @@ export function t1() {
   }
   const x = randInt(10, 99), y = randInt(10, 99);
   const a = Math.max(x, y), b = Math.min(x, y);
-  return q(1, `${a} − ${b}`, a - b); // 非负
+  return q(1, `${a} − ${b}`, a - b);
 }
 
 /* ---------------- T2 两位数 ×÷ 一位数 ---------------- */
@@ -31,7 +31,7 @@ export function t2() {
   const b = randInt(2, 9);
   const lo = Math.ceil(10 / b), hi = Math.floor(99 / b);
   const quotient = randInt(lo, hi);
-  const a = b * quotient; // 两位被除数，整除
+  const a = b * quotient;
   return q(2, `${a} ÷ ${b}`, quotient);
 }
 
@@ -95,8 +95,30 @@ export function t4() {
   return q(4, `${fmt(a)} ÷ ${fmt(d)}`, quotient);
 }
 
-/* ---------------- T5 混合计算（含括号） ---------------- */
+/* ---------------- T5 小数连续加减混合 ---------------- */
 export function t5() {
+  let total = Number((randInt(10, 99) / 10).toFixed(1)); // 1.0 .. 9.9
+  const parts = [fmt(total)];
+  const extra = randInt(2, 3); // 共 3–4 项
+  for (let i = 0; i < extra; i++) {
+    const p = randInt(1, 3);
+    const subtract = Math.random() < 0.5 && total > 0.6;
+    if (subtract) {
+      const maxUnits = Math.max(1, Math.floor(total * 10 ** p) - 1);
+      const term = dec(p, 1, maxUnits); // 保证 term < total 且 > 0
+      total = round(total - term);
+      parts.push("\u2212", fmt(term));
+    } else {
+      const term = dec(p, 1, 999);
+      total = round(total + term);
+      parts.push("+", fmt(term));
+    }
+  }
+  return q(5, parts.join(" "), round(total));
+}
+
+/* ---------------- T6 混合计算（含括号） ---------------- */
+export function t6() {
   const r = randInt(0, 2);
   if (r === 0) {
     const useDec = Math.random() < 0.5;
@@ -104,22 +126,51 @@ export function t5() {
     const b = dec(1, 11, 99);
     const c = dec(1, 11, 99);
     const d = useDec ? dec(2, 100, 999) : randInt(12, 99);
-    return q(5, `${fmt(a)} × ${fmt(b)} + ${fmt(c)} × ${fmt(d)}`, round(a * b + c * d));
+    return q(6, `${fmt(a)} × ${fmt(b)} + ${fmt(c)} × ${fmt(d)}`, round(a * b + c * d));
   }
   if (r === 1) {
     const a = randInt(2, 9);
     const b = dec(1, 11, 99), c = dec(1, 11, 99);
-    return q(5, `${a} × (${fmt(b)} + ${fmt(c)})`, round(a * (b + c)));
+    return q(6, `${a} × (${fmt(b)} + ${fmt(c)})`, round(a * (b + c)));
   }
   const a = randInt(2, 9);
   let b = dec(1, 20, 99), c = dec(1, 5, 60);
   if (b < c) [b, c] = [c, b];
   const d = dec(1, 11, 99), e = dec(1, 11, 99);
-  return q(5, `${a} × (${fmt(b)} − ${fmt(c)}) + ${fmt(d)} × ${fmt(e)}`, round(a * (b - c) + d * e));
+  return q(6, `${a} × (${fmt(b)} − ${fmt(c)}) + ${fmt(d)} × ${fmt(e)}`, round(a * (b - c) + d * e));
 }
 
-/* ---------------- T6 一元一次方程 ---------------- */
-// p(qx + r) + s = t − u(vx + w)
+/* ---------------- T7 简单一元一次方程（单括号，整数解） ---------------- */
+function trySimpleEq() {
+  const b = randInt(2, 9);
+  const x = randInt(1, 12);
+  const c = randInt(1, 99), d = randInt(1, 99), a = randInt(20, 99);
+  const form = randInt(0, 2);
+  if (form === 0) {
+    // a − (bx + c) = d
+    const A = b * x + c + d;
+    return q(7, `${A} − (${b}x + ${c}) = ${d}`, x);
+  }
+  if (form === 1) {
+    // a − (bx − c) = d
+    const A = b * x + d - c;
+    if (A < 1) return null;
+    return q(7, `${A} − (${b}x − ${c}) = ${d}`, x);
+  }
+  // (bx + c) − a = d
+  const cc = a + d - b * x;
+  if (cc < 1) return null;
+  return q(7, `(${b}x + ${cc}) − ${a} = ${d}`, x);
+}
+export function t7() {
+  for (let i = 0; i < 60; i++) {
+    const e = trySimpleEq();
+    if (e) return e;
+  }
+  return q(7, "87 − (5x + 40) = 22", 5);
+}
+
+/* ---------------- T8 复杂一元一次方程 ---------------- */
 function tryEquation() {
   const p = randInt(2, 9), qq = randInt(1, 9);
   const r = randInt(1, 200) * (Math.random() < 0.5 ? -1 : 1);
@@ -136,15 +187,14 @@ function tryEquation() {
   if (!(x >= 0) || x > 100) return null;
   if (Math.abs(x * 10 - Math.round(x * 10)) > 1e-6) return null; // 仅整数或一位小数
   const text = `${p}(${qq}x ${sign(r)} ${Math.abs(r)}) ${sign(s)} ${Math.abs(s)} = ${t} − ${u}(${v}x ${sign(w)} ${Math.abs(w)})`;
-  return q(6, text, round(x));
+  return q(8, text, round(x));
 }
-export function t6() {
+export function t8() {
   for (let i = 0; i < 200; i++) {
     const e = tryEquation();
     if (e) return e;
   }
-  // 兜底（验证：6x+6 = 66-6x → x=5）
-  return q(6, "2(3x + 1) + 4 = 68 − 2(3x + 1)", 5);
+  return q(8, "2(3x + 1) + 4 = 68 − 2(3x + 1)", 5);
 }
 
-export const GENERATORS = { 1: t1, 2: t2, 3: t3, 4: t4, 5: t5, 6: t6 };
+export const GENERATORS = { 1: t1, 2: t2, 3: t3, 4: t4, 5: t5, 6: t6, 7: t7, 8: t8 };

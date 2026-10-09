@@ -136,7 +136,7 @@ function paint() {
   if (!wrap) return;
   wrap.querySelector("#p-round").textContent = s.round > 1 ? `重做第 ${s.round - 1} 轮` : "第 1 轮";
   wrap.querySelector("#p-count").textContent = `第 ${s.pos + 1}/${s.queue.length} 题`;
-  const isEq = q.type === 6;
+  const isEq = q.type === 7 || q.type === 8;
   const problemText = isEq ? q.text : `${q.text} = ?`;
   const pEl = wrap.querySelector("#p-problem");
   pEl.textContent = problemText;

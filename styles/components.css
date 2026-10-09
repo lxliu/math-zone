@@ -86,7 +86,7 @@
 .key.wide:active { box-shadow: 0 1px 0 var(--green-dark); }
 
 .answer-display {
-  min-height: 64px; border-radius: var(--radius-md); background: #FFF9EC;
+  width: min(420px, 100%); min-height: 64px; box-sizing: border-box; border-radius: var(--radius-md); background: #FFF9EC;
   border: 3px dashed #F0DDB8; display: flex; align-items: center; justify-content: center;
   font-size: 40px; font-weight: 900; letter-spacing: 3px; color: var(--ink);
 }
