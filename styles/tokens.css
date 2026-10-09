@@ -1,0 +1,45 @@
+:root {
+  /* 背景 */
+  --bg-top: #FFF7E8;
+  --bg-bottom: #E9F6FF;
+
+  /* 文本 */
+  --ink: #3A3A4A;
+  --muted: #8A8A9A;
+  --line: #ECECF3;
+
+  /* 卡片与主色 */
+  --card: #FFFFFF;
+  --primary: #FF9F43;
+  --primary-dark: #E8881E;
+  --green: #4CAF50;
+  --green-dark: #388E3C;
+  --blue: #42A5F5;
+  --blue-dark: #1976D2;
+  --purple: #AB47BC;
+  --pink: #F06292;
+  --amber-soft: #F6C177;
+
+  /* 稀有度 */
+  --tier-common: #9AA6B2;
+  --tier-rare: #4FA3F7;
+  --tier-epic: #B36BFF;
+  --tier-legend: #FF6FAE;
+
+  /* 幸运星 */
+  --star: #FFC107;
+  --star-deep: #E8A400;
+
+  /* 圆角 / 阴影 / 间距 */
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+  --shadow: 0 10px 28px rgba(120, 96, 40, .14);
+  --shadow-sm: 0 4px 12px rgba(120, 96, 40, .10);
+  --gap: 16px;
+
+  /* 尺寸 */
+  --nav-h: 68px;
+  --tap: 64px;
+}

@@ -1,0 +1,11 @@
+{
+  "name": "kids-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "幸运星计算乐园 —— 让小朋友每天坚持计算练习的 H5 小游戏",
+  "scripts": {
+    "dev": "python3 -m http.server 4173",
+    "serve": "python3 -m http.server 4173"
+  }
+}

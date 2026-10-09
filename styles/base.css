@@ -1,0 +1,47 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom)) fixed;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+#app { min-height: 100%; display: flex; flex-direction: column; }
+
+.screen-root {
+  flex: 1;
+  padding: calc(var(--nav-h) + 12px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  display: flex; justify-content: center;
+}
+.screen-root.full-bleed { padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
+
+.screen { width: 100%; max-width: 1180px; }
+
+/* ---------- 顶部导航栏 ---------- */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  height: calc(var(--nav-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right));
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255, 255, 255, .86);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+.navbar[hidden] { display: none; }
+
+/* ---------- 通用 ---------- */
+h1, h2, h3, p { margin: 0; }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.row { display: flex; align-items: center; gap: 12px; }
+.spacer { flex: 1 1 auto; }
+.stack { display: flex; flex-direction: column; gap: var(--gap); }
+.grid { display: grid; gap: var(--gap); }
+
+.hide-when-narrow { display: inline-flex; }
+@media (max-width: 860px) { .hide-when-narrow { display: none; } }

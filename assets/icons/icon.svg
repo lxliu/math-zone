@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE39A"/>
+      <stop offset="1" stop-color="#FF9F43"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- star -->
+  <path d="M256 78 l43 88 97 14 -70 68 17 97 -87 -46 -87 46 17 -97 -70 -68 97 -14z"
+        fill="#FFFDF5" stroke="#E88B1E" stroke-width="10" stroke-linejoin="round"/>
+  <!-- fox ears -->
+  <path d="M150 372 l26 -70 44 40z" fill="#F97316" stroke="#C2410C" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M362 372 l-26 -70 -44 40z" fill="#F97316" stroke="#C2410C" stroke-width="9" stroke-linejoin="round"/>
+  <!-- fox face -->
+  <path d="M256 300 c62 0 104 44 104 92 0 40 -46 66 -104 66 s-104 -26 -104 -66c0 -48 42 -92 104 -92z"
+        fill="#FB923C" stroke="#C2410C" stroke-width="10" stroke-linejoin="round"/>
+  <circle cx="212" cy="382" r="13" fill="#3A3A4A"/>
+  <circle cx="300" cy="382" r="13" fill="#3A3A4A"/>
+  <path d="M256 408 l-18 18 h36z" fill="#3A3A4A"/>
+  <path d="M256 430 c10 14 26 14 34 4" fill="none" stroke="#3A3A4A" stroke-width="8" stroke-linecap="round"/>
+</svg>
