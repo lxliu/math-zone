@@ -44,21 +44,44 @@
 .tier-title { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 20px; margin-bottom: 10px; }
 .tier-title .line { flex: 1; height: 2px; background: var(--line); border-radius: 2px; }
 
-/* ================= 日历 ================= */
-.cal-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
-.cal-month { font-size: 24px; font-weight: 900; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-.cal-dow { text-align: center; font-weight: 800; color: var(--muted); padding: 6px 0; }
-.cal-cell { aspect-ratio: 1.15; border-radius: var(--radius-sm); background: #fff; box-shadow: var(--shadow-sm);
-  padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+/* ================= 日历（全屏不滚动） ================= */
+.cal-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: clamp(6px, 1vh, 12px); position: relative; overflow: hidden; }
+.cal-decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.cal-decor img { position: absolute; opacity: .07; }
+.cal-head { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+.cal-mascot { width: clamp(38px, 6vh, 64px); height: clamp(38px, 6vh, 64px); flex: 0 0 auto; }
+.cal-mascot img { width: 100%; height: 100%; object-fit: contain; }
+.cal-month { font-size: clamp(24px, 4vh, 40px); font-weight: 900; }
+.cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(4px, .7vh, 8px); position: relative; z-index: 1; }
+.cal-dow { text-align: center; font-weight: 800; color: var(--muted); font-size: clamp(14px, 2.1vh, 22px); }
+.cal-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: clamp(4px, .7vh, 8px); position: relative; z-index: 1; }
+.cal-cell { border-radius: var(--radius-sm); background: #fff; box-shadow: var(--shadow-sm); min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 2px; }
 .cal-cell.blank { background: transparent; box-shadow: none; }
-.cal-cell.done { background: #E9F9EC; box-shadow: 0 3px 0 #CBEBD2; }
+.cal-cell.done { background: #E9F9EC; box-shadow: inset 0 0 0 2px #BEE6C6; }
 .cal-cell.missed { background: #F3F3F7; }
 .cal-cell.today { outline: 3px solid var(--primary); }
-.cal-cell .d { font-weight: 800; }
-.cal-cell .s { font-size: 13px; font-weight: 800; color: var(--star-deep); }
-.cal-cell .mk { font-size: 16px; }
-.cal-foot { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+.cal-cell .d { font-weight: 800; font-size: clamp(16px, 2.6vh, 28px); line-height: 1; }
+.cal-cell .pet { width: clamp(18px, 3.8vh, 46px); height: clamp(18px, 3.8vh, 46px); }
+.cal-cell .pet img { width: 100%; height: 100%; object-fit: contain; }
+.cal-cell .s { font-size: clamp(11px, 1.8vh, 18px); font-weight: 800; color: var(--star-deep); }
+.cal-cell .mk { font-size: clamp(12px, 1.9vh, 22px); }
+.cal-foot { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; font-size: clamp(14px, 2vh, 20px); }
+.cal-foot .pet { width: clamp(20px, 3vh, 32px); height: clamp(20px, 3vh, 32px); }
+.cal-foot .pet img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ================= 今日（全屏） ================= */
+.today-screen { align-items: stretch; }
+.today-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 28px); }
+.today-screen .today-date { font-size: clamp(22px, 3.6vh, 34px); }
+.today-screen .today-start .btn { min-width: min(520px, 80%); font-size: clamp(22px, 3.6vh, 34px); min-height: clamp(64px, 11vh, 96px); }
+.today-screen .today-status { font-size: clamp(15px, 2.2vh, 22px); }
+.today-screen .quick-card .ic { font-size: clamp(32px, 5vh, 52px); }
+.today-screen .quick-card .t { font-size: clamp(16px, 2.4vh, 24px); }
+.today-screen .quick-card .s { font-size: clamp(13px, 1.9vh, 18px); }
+.today-screen .today-head { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0; }
+.today-mascot { width: clamp(56px, 9vh, 96px); height: clamp(56px, 9vh, 96px); }
+.today-mascot img { width: 100%; height: 100%; object-fit: contain; }
 
 /* ================= 表单 ================= */
 .field { margin-bottom: 16px; }

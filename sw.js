@@ -1,6 +1,6 @@
 // Service Worker —— 离线缓存
 // 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
-const CACHE = "lucky-star-v7";
+const CACHE = "lucky-star-v8";
 
 const CORE = [
   "./",

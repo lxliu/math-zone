@@ -10,16 +10,22 @@ body {
   touch-action: manipulation;
 }
 
-#app { min-height: 100%; display: flex; flex-direction: column; }
+#app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
 .screen-root {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: calc(var(--nav-h) + 12px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
   display: flex; justify-content: center;
 }
 .screen-root.full-bleed { padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
 
-.screen { width: 100%; max-width: 1180px; }
+/* 默认：在屏内滚动（列表页用）；.fit 则刚好一屏、不滚动 */
+.screen {
+  width: 100%; max-width: 1180px; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.screen.fit { overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
 
 /* ---------- 顶部导航栏 ---------- */
 .navbar {
