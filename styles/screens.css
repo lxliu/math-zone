@@ -70,18 +70,21 @@
 .cal-foot .pet { width: clamp(20px, 3vh, 32px); height: clamp(20px, 3vh, 32px); }
 .cal-foot .pet img { width: 100%; height: 100%; object-fit: contain; }
 
-/* ================= 今日（全屏） ================= */
-.today-screen { align-items: stretch; }
-.today-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 28px); }
-.today-screen .today-date { font-size: clamp(22px, 3.6vh, 34px); }
-.today-screen .today-start .btn { min-width: min(520px, 80%); font-size: clamp(22px, 3.6vh, 34px); min-height: clamp(64px, 11vh, 96px); }
-.today-screen .today-status { font-size: clamp(15px, 2.2vh, 22px); }
-.today-screen .quick-card .ic { font-size: clamp(32px, 5vh, 52px); }
-.today-screen .quick-card .t { font-size: clamp(16px, 2.4vh, 24px); }
-.today-screen .quick-card .s { font-size: clamp(13px, 1.9vh, 18px); }
+/* ================= 今日（居中卡片） ================= */
+.today-screen { align-items: center; justify-content: center; }
+.today-card { width: min(620px, 100%); margin-bottom: clamp(20px, 12vh, 160px); padding: clamp(20px, 3.4vh, 34px); }
 .today-screen .today-head { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0; }
-.today-mascot { width: clamp(56px, 9vh, 96px); height: clamp(56px, 9vh, 96px); }
+.today-mascot { width: clamp(52px, 8vh, 88px); height: clamp(52px, 8vh, 88px); }
 .today-mascot img { width: 100%; height: 100%; object-fit: contain; }
+.today-screen .today-date { font-size: clamp(20px, 3.2vh, 30px); }
+.today-main { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.2vh, 22px); margin: clamp(16px, 2.8vh, 28px) 0; }
+.today-card #start { min-width: min(420px, 90%); font-size: clamp(22px, 3.4vh, 32px); min-height: clamp(64px, 10vh, 92px); }
+.today-screen .today-status { font-size: clamp(14px, 2vh, 20px); text-align: center; }
+.today-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 1.4vh, 14px); border-top: 1px dashed var(--line); padding-top: clamp(12px, 2vh, 20px); }
+.today-tile { background: #FFF9EC; border: 1px solid var(--line); border-radius: var(--radius-md); padding: clamp(10px, 1.8vh, 18px); text-align: center; cursor: pointer; }
+.today-tile .ic { font-size: clamp(26px, 4.2vh, 42px); }
+.today-tile .t { font-weight: 800; font-size: clamp(15px, 2.1vh, 20px); margin-top: 4px; }
+.today-tile .s { color: var(--muted); font-size: clamp(12px, 1.7vh, 16px); }
 
 /* ================= 表单 ================= */
 .field { margin-bottom: 16px; }
