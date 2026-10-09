@@ -40,7 +40,11 @@ export function render() {
   `;
   mountScreen(wrap);
 
-  wrap.querySelector("#start").addEventListener("click", () => { play("button"); go("difficulty"); });
+  wrap.querySelector("#start").addEventListener("click", () => {
+    play("button");
+    // 有进行中会话则直接续做，否则先选难度
+    go(s && !s.completed ? "play" : "difficulty");
+  });
   wrap.querySelectorAll("[data-go]").forEach((c) =>
     c.addEventListener("click", () => { play("button"); go(c.dataset.go); })
   );

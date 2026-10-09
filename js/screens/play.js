@@ -5,7 +5,7 @@ import { play as sfx, unlockAudio } from "../audio.js";
 import { createKeypad } from "../keypad.js";
 import {
   startOrResume, currentQuestion, submitAnswer, advance, addTime,
-  gameState, dayTarget, todaySession,
+  gameState, dayTarget, todaySession, resetTodaySession,
 } from "../game.js";
 import { confetti } from "../anim.js";
 
@@ -158,6 +158,7 @@ function onPause() {
     bodyHtml: `<p class="muted">进度已自动保存，随时可以回来继续。</p>`,
     actions: [
       { label: "继续做题", kind: "green", onClick: () => { problemStart = Date.now(); } },
+      { label: "重新开始", kind: "ghost", onClick: () => { cleanup(); resetTodaySession(); go("difficulty"); } },
       { label: "回主页", kind: "ghost", onClick: () => go("today") },
     ],
   });

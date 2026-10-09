@@ -21,6 +21,18 @@ export function todaySession() {
 
 export function dayTarget() { return dayTotalStars(gameState.difficulty); }
 
+// 放弃/重新开始：删除今天会话
+export function resetTodaySession() {
+  const a = currentAccount();
+  if (!a) return;
+  const key = todayKey();
+  commit((st) => {
+    const acc = st.accounts.find((x) => x.id === a.id);
+    if (acc) delete acc.sessions[key];
+  });
+  gameState.session = null;
+}
+
 function persistSession() {
   const a = currentAccount();
   const s = gameState.session;

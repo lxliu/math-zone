@@ -40,3 +40,6 @@ export function animalById(id) { return ANIMALS.find((a) => a.id === id) || null
 export function animalsByTier(tier) { return ANIMALS.filter((a) => a.tier === tier); }
 export function tierById(id) { return TIERS.find((t) => t.id === id) || null; }
 export function animalSrc(id) { return `assets/animals/${id}.svg`; }
+// 全身图（仅 3D 查看 / 解锁仪式使用；未提供时回退头像）
+export function animalFullSrc(id) { return `assets/animals/full/${id}.svg`; }
+export function tierClass(tier) { return `glow-${tier}`; }
