@@ -1,7 +1,8 @@
 # 幸运星计算乐园 🦊⭐
 
-让小朋友**每天坚持**做 20 道计算练习的 H5 小游戏。做完当天全部题目 → 收集**幸运星** → 解锁可爱**动物图鉴**。
+让小朋友**每天坚持**做计算练习的 H5 小游戏。完成后收集**幸运星** → 解锁可爱**动物图鉴**。
 
+- 家长配置每日题量（**8 类题型**，每题 2 星），孩子不选难度
 - 纯静态、离线可用、可"添加到主屏幕"（PWA）
 - iPad 优先，兼容 MacBook
 - 数据全部存在浏览器本地，支持多账号与导出/导入备份
@@ -24,18 +25,22 @@ npx serve .          # 或  python3 -m http.server
 
 ## 部署（iPad 用）
 
-把整个目录作为静态站点发布（任选其一），**必须 HTTPS** 才能启用 Service Worker / PWA：
+**已配置 GitHub Actions 自动部署**：push 到 `main` 后自动发布到 GitHub Pages。
 
-- **GitHub Pages**：推送到仓库 → Settings → Pages → 选择分支根目录
-- **Netlify / Vercel**：拖拽目录即可
+- 仓库：https://github.com/lxliu/math-zone
+- 线上地址：**https://lxliu.github.io/math-zone/**
+- 首次需在 **Settings → Pages → Source 选 “GitHub Actions”**（工作流已尝试自动启用）
+- 之后每次 push 到 main，`.github/workflows/pages.yml` 会自动重新部署
 
-发布后得到 URL，iPad 上：
+iPad 上：
 
-1. Safari 打开该 URL
+1. Safari 打开线上地址
 2. 点 **分享 → 添加到主屏幕**
 3. 从主屏幕图标进入（全屏、离线）
 
-> 重要：iPad Safari 对**非主屏网站**的本地存储有"7 天无交互即清理"策略；**添加到主屏幕**后不受此限制。仍建议定期用「设置 → 导出备份」。
+> 重要：**必须 HTTPS** 才能启用 Service Worker / PWA。iPad Safari 对**非主屏网站**的本地存储有"7 天无交互即清理"策略；**添加到主屏幕**后不受此限制。仍建议定期用「设置 → 导出备份」。
+
+其他可选：Netlify / Vercel 导入该仓库即可。
 
 ## 数据
 
