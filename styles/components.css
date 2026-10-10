@@ -108,6 +108,33 @@
 .overlay-root > * { pointer-events: auto; }
 .backdrop { position: fixed; inset: 0; background: rgba(40,32,16,.38); display: flex; align-items: center; justify-content: center; padding: 24px; }
 .modal { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 24px; width: min(560px, 92vw); }
+/* 只给 modal() 生成的对话框内容区加滚动（解锁仪式是直接建 .modal，不受影响，避免裁掉发光）*/
+#modal-body { max-height: 64vh; overflow-y: auto; }
+
+/* ================= 家长设置：题型说明弹窗 ================= */
+.info-q {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-left: 7px; vertical-align: 1px;
+  border-radius: 50%; background: var(--primary); color: #fff;
+  font-size: 12px; font-weight: 900;
+}
+.info-label { font-size: 12px; font-weight: 800; color: var(--muted); letter-spacing: .04em; margin-bottom: 3px; }
+.info-text { font-size: 14px; line-height: 1.65; }
+.info-field { margin-bottom: 11px; }
+.info-ex { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.info-ex code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px; font-weight: 700; padding: 5px 10px; border-radius: 8px;
+  background: #FFF6E6; border: 1px solid #F2E2C6; color: #7A5A1E; white-space: nowrap;
+}
+.info-ex.sm { margin-top: 4px; }
+.info-ex.sm code { font-size: 12.5px; padding: 3px 8px; }
+.info-ex.inline { margin-top: 4px; }
+.info-ex.inline code { font-size: 13px; padding: 3px 9px; }
+.info-sub { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: #FCFAF5; border: 1px solid var(--line); }
+.info-sub-head { display: flex; align-items: center; gap: 8px; }
+.info-weight { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--primary); color: #fff; }
+.info-tip { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-sm); background: #FFF9EC; border-left: 3px solid var(--primary); font-size: 13px; line-height: 1.6; }
 .toast {
   position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   background: rgba(58,58,74,.94); color: #fff; padding: 12px 20px; border-radius: var(--radius-pill);

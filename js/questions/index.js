@@ -1,4 +1,4 @@
-// 按家长配置组卷：类型 1→6 分组，组内打乱
+// 按家长配置组卷：逐类生成 → 类内去重 → 类内打乱 → 按类顺序拼接
 import { QUESTION_TYPES, STARS_PER_QUESTION } from "../config.js";
 import { shuffle } from "../utils.js";
 import { GENERATORS } from "./types.js";

@@ -10,6 +10,8 @@ function dec(p, min, max) {
   return Number((randInt(min, max) / 10 ** p).toFixed(p));
 }
 function sign(v) { return v >= 0 ? "+" : "−"; }
+// 系数为 1 时不写出来：1x → x（方程题里不该出现「1x」）
+function coef(n) { return n === 1 ? "" : String(n); }
 
 /* ---------------- T1 两位数加减 ---------------- */
 export function t1() {
@@ -35,39 +37,109 @@ export function t2() {
   return q(2, `${a} ÷ ${b}`, quotient);
 }
 
-/* ---------------- T3 巧算 ---------------- */
+/* ---------------- T3 巧算 ----------------
+   设计原则：技巧骨架写死（类型固定），数字参数全随机（题目多样）。
+   全部答案都是整百/整千或整数，孩子能自己判断「凑对了没有」。 */
+
+// 好朋友数对：乘积一定是整百。倍数 m 会乘到其中一边，
+// 使结果永远是「base×friend×m」，天然凑整。
+// 限制 base 为两位数时，friend 侧的倍数才不会造出三位×两位数（超出三年级）。
+const FRIEND_PAIRS = [
+  [25, 4], [25, 8], [50, 2], [20, 5],   // base 两位数
+  [125, 8], [125, 4],                    // base 三位数
+];
+
 function t3Round() {
-  const pairs = [[25, 4], [25, 8], [125, 8], [50, 2], [25, 16], [125, 4], [25, 12], [125, 2], [25, 20], [5, 20]];
-  const [a, b] = pairs[randInt(0, pairs.length - 1)];
+  const [base, friend] = FRIEND_PAIRS[randInt(0, FRIEND_PAIRS.length - 1)];
+  // 少量（25%）三项连乘：25 × 4 × 7
+  if (Math.random() < 0.25) {
+    const m3 = randInt(2, 9);
+    return q(3, `${base} × ${friend} × ${m3}`, base * friend * m3);
+  }
+  // base 侧可用倍数：乘完不能变成整十/整百，否则题会退化成「1000 × 8」这种没难度的
+  const msBase = [];
+  for (let k = 2; k <= 9; k++) if ((base * k) % 50 !== 0) msBase.push(k);
+  // base 是三位数时，倍数只能乘在 base 侧，否则会造出三位×两位数（超出三年级）
+  const canFriendSide = base < 100;
+  const useFriendSide = canFriendSide && (!msBase.length || Math.random() < 0.5);
+  if (useFriendSide) {
+    const m = randInt(2, 9);
+    return q(3, `${base} × ${friend * m}`, base * friend * m);
+  }
+  const m = msBase[randInt(0, msBase.length - 1)];
+  return q(3, `${base * m} × ${friend}`, base * friend * m);
+}
+
+function t3Dist() {
+  // 接近整百/整千的数拆开用分配律：98 × 7、103 × 6、997 × 8
+  const base = Math.random() < 0.3 ? 1000 : 100;
+  const off = randInt(1, 5);              // 超过 5 就不叫「接近整百」了
+  const a = Math.random() < 0.5 ? base - off : base + off;
+  const b = randInt(3, 9);
   return q(3, `${a} × ${b}`, a * b);
 }
-function t3Dist() {
-  const base = [99, 98, 101, 102, 97, 103, 999][randInt(0, 6)];
-  const b = randInt(3, 9);
-  return q(3, `${base} × ${b}`, base * b);
-}
+
 function t3Factor() {
-  const c = [7, 8, 9, 12, 25, 15][randInt(0, 5)];
-  const a = randInt(11, 89), b = 100 - a;
-  return q(3, `${a} × ${c} + ${b} × ${c}`, 100 * c);
+  // 分配律反用：两项乘法有公因数，另两个加数先凑成整百
+  const w = Math.random();
+  const S = w < 0.6 ? 100 : w < 0.8 ? 200 : 1000;
+  const a = randInt(11, S - 11);
+  const b = S - a;
+  const c = S === 1000 ? randInt(3, 12) : randInt(3, 9);  // 允许答案上万
+  return q(3, `${a} × ${c} + ${b} × ${c}`, S * c);
 }
+
+// 小数互补配对：[小数, 配对的整数, 两者相乘的结果]
+const DEC_PAIRS = [
+  [0.125, 8, 1], [0.25, 4, 1], [0.5, 2, 1], [0.2, 5, 1], [0.05, 20, 1],
+  [1.5, 2, 3], [2.5, 4, 10], [1.25, 8, 10], [12.5, 8, 100],
+];
+
 function t3Dec() {
-  const cases = [
-    ["1.125 × 88", 99], ["0.125 × 8", 1], ["0.25 × 48", 12], ["1.25 × 8", 10],
-    ["2.5 × 4", 10], ["12.5 × 8", 100], ["0.25 × 12", 3], ["1.25 × 88", 110],
-    ["0.125 × 16", 2], ["1.5 × 200", 300],
-  ];
-  const [text, answer] = cases[randInt(0, cases.length - 1)];
-  return q(3, text, answer);
+  const [d, i] = DEC_PAIRS[randInt(0, DEC_PAIRS.length - 1)];
+  const m = randInt(2, 9);
+  const dm = round(d * m);
+  // 倍数乘到整数侧（0.125 × 24）或小数侧（0.375 × 8）。
+  // 小数侧必须保证乘完仍带小数，否则会退化成「4 × 2」这种纯整数题（就不是小数互补了）。
+  if (Math.random() < 0.5 && !Number.isInteger(dm)) {
+    const text = `${fmt(dm)} × ${i}`;
+    return q(3, text, round(dm * i));
+  }
+  const text = `${fmt(d)} × ${i * m}`;
+  return q(3, text, round(d * (i * m)));
 }
+
 function t3Add() {
+  // 加减凑整：两个加数都只差一点点到整百/整千，先看成整百再多退少补
   const base = [100, 200, 1000][randInt(0, 2)];
-  const span = Math.min(20, Math.floor(base / 10));
-  const a = base - randInt(1, span), b = base - randInt(1, span);
+  const b = base - randInt(1, 5);
+  // 少量（20%）出一个略超 base 的干扰项：103 + 98
+  const a = Math.random() < 0.2 ? base + randInt(1, 4) : base - randInt(1, 5);
   return q(3, `${a} + ${b}`, a + b);
 }
+
+// 教学加权：凑整 / 分配律 / 提公因 是课本高频，各 25%；
+//         小数互补 / 加减凑整 是补充，各 12.5%
+const T3_WEIGHTS = [
+  [t3Round, 0.25],
+  [t3Dist, 0.25],
+  [t3Factor, 0.25],
+  [t3Dec, 0.125],
+  [t3Add, 0.125],
+];
+
+function pickT3() {
+  const total = T3_WEIGHTS.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [fn, w] of T3_WEIGHTS) {
+    r -= w;
+    if (r <= 0) return fn();
+  }
+  return T3_WEIGHTS[0][0]();
+}
+
 export function t3() {
-  return [t3Round, t3Dist, t3Factor, t3Dec, t3Add][randInt(0, 4)]();
+  return pickT3();
 }
 
 /* ---------------- T4 小数加减乘除 ---------------- */
@@ -186,7 +258,7 @@ function tryEquation() {
   const x = (D - B) / denom;
   if (!(x >= 0) || x > 100) return null;
   if (Math.abs(x * 10 - Math.round(x * 10)) > 1e-6) return null; // 仅整数或一位小数
-  const text = `${p}(${qq}x ${sign(r)} ${Math.abs(r)}) ${sign(s)} ${Math.abs(s)} = ${t} − ${u}(${v}x ${sign(w)} ${Math.abs(w)})`;
+  const text = `${p}(${coef(qq)}x ${sign(r)} ${Math.abs(r)}) ${sign(s)} ${Math.abs(s)} = ${t} − ${u}(${coef(v)}x ${sign(w)} ${Math.abs(w)})`;
   return q(8, text, round(x));
 }
 export function t8() {

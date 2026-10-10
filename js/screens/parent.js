@@ -61,9 +61,10 @@ export function render() {
       ${QUESTION_TYPES.map(
         (t) => `
         <div class="row" style="padding:12px 0;border-bottom:1px dashed var(--line)">
-          <div style="min-width:0">
-            <div style="font-weight:800">${t.id}. ${t.name}</div>
-            <div class="muted" style="font-size:13px">${t.desc} · 例：${t.sample}</div>
+          <div style="min-width:0;cursor:pointer" data-info="${t.id}">
+            <div style="font-weight:800">${t.id}. ${t.name}<span class="info-q" title="说明与例题">?</span></div>
+            <div class="muted" style="font-size:13px">${t.short}</div>
+            <div class="info-ex inline">${(t.samples || []).slice(0, 3).map((s) => `<code>${s}</code>`).join("")}</div>
           </div>
           <span class="spacer"></span>
           <div class="row" style="gap:8px">
@@ -81,6 +82,54 @@ export function render() {
     </div>
   `;
   mountScreen(wrap);
+
+  /* ---------------- 类型说明弹窗 ---------------- */
+  function showTypeInfo(t) {
+    const field = (label, text) =>
+      text ? `<div class="info-field"><div class="info-label">${label}</div><div class="info-text">${text}</div></div>` : "";
+    const exList = (list, cls = "") =>
+      `<div class="info-ex ${cls}">${list.map((s) => `<code>${s}</code>`).join("")}</div>`;
+
+    const subs = t.subs
+      ? `<div class="info-label" style="margin-top:16px">五个子类</div>` +
+        t.subs
+          .map(
+            (s) => `
+          <div class="info-sub">
+            <div class="info-sub-head"><b>${s.name}</b><span class="info-weight">${s.weight}</span></div>
+            <div class="info-text muted">${s.trick}</div>
+            ${exList(s.samples, "sm")}
+          </div>`
+          )
+          .join("")
+      : "";
+
+    const tips = t.tips && t.tips.length ? `<div class="info-tip">💡 ${t.tips.join("　")}</div>` : "";
+
+    modal({
+      title: `${t.id}. ${t.name}`,
+      bodyHtml: `
+        <p class="info-text muted" style="margin-bottom:14px">${t.short}</p>
+        ${field("练什么", t.skill)}
+        ${field("数字范围", t.range)}
+        ${field("规则保证", t.rule)}
+        <div class="info-label" style="margin-top:6px">例题</div>
+        ${exList(t.samples || [])}
+        ${subs}
+        ${tips}
+      `,
+      actions: [{ label: "知道了", kind: "green" }],
+    });
+  }
+
+  wrap.querySelectorAll("[data-info]").forEach((el) =>
+    el.addEventListener("click", () => {
+      const t = QUESTION_TYPES.find((x) => x.id === Number(el.dataset.info));
+      if (!t) return;
+      sfx("button");
+      showTypeInfo(t);
+    })
+  );
 
   function refresh() {
     wrap.querySelectorAll("[data-val]").forEach((el) => { el.textContent = String(draft[el.dataset.val]); });

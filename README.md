@@ -44,11 +44,11 @@ iPad 上：
 
 ## 发版三步（缓存版本号）
 
-改完代码发布前，把这三处版本号对齐（现在是 `0.6.2`）：
+改完代码发布前，把这三处版本号对齐（现在是 `0.7.0`）：
 
 | 文件 | 改什么 | 为什么 |
 |---|---|---|
-| `index.html` | 5 处 `?v=0.6.2`（4 个 CSS + `js/main.js`） | 纯静态 HTML 读不到 JS 常量，只能手改；URL 一变就必然缓存击穿 |
+| `index.html` | 5 处 `?v=0.7.0`（4 个 CSS + `js/main.js`） | 纯静态 HTML 读不到 JS 常量，只能手改；URL 一变就必然缓存击穿 |
 | `js/constants.js` | `APP_VERSION` | 会拼进 `sw.js?v=`；sw.js 的 URL 一变，浏览器必然装新 SW 并清旧缓存 |
 | `sw.js` | `CACHE`（如 `lucky-star-v12`） | 手动保险：换个新缓存桶 |
 
@@ -81,6 +81,7 @@ tools/                     开发工具（不参与线上运行）
   icon-gen.html            由 GLB 批量渲染动物图标（256px WebP）
   icon-gen-server.py       配套落盘服务
   3d-selftest.html         3D 素材自检（逐只校验模型 / 动画 / 地面高度）
+  gen-check.mjs            题目生成器采样自检（node tools/gen-check.mjs 20000）
   smoke.html / smoke-server.py  注入存档的界面冒烟测试
 js/
   main router store storage utils ui audio anim
@@ -114,7 +115,8 @@ js/
 - [x] 8. 导出 / 导入备份
 - [x] 9. 3D 大升级：换成 Kenney Cube Pets 2.0（24 只，CC0，带 8 条动画）+ 渲染管线升级
 - [x] 10. 图鉴扩到 24 只（10/7/5/2 四档）+ 旧存档迁移 + 图标改由 3D 渲染
-- [~] 11. iPad Pro / MacBook 真机调优与测试（自动化校验已过，真机待验证）
+- [x] 11. 巧算改为「固定技巧骨架 + 随机参数」（题量 10 → 上千）+ 家长设置页每类详细说明
+- [~] 12. iPad Pro / MacBook 真机调优与测试（自动化校验已过，真机待验证）
 
 ## 真机测试清单（请在设备上过一遍）
 

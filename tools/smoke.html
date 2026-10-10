@@ -35,6 +35,8 @@ const state = {
 };
 function mainIdx(o) { return Math.min(o.length - 1, 1); }
 localStorage.setItem('luckyStar.v1', JSON.stringify(state));
+// 家长设置需要口令解锁标记
+try { sessionStorage.setItem('parentUnlocked', '1'); } catch (e) {}
 location.replace('../index.html#/' + to);
 </script>
 </body>
