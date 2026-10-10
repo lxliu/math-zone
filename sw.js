@@ -2,7 +2,7 @@
 // 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
 // 注意：3D 模型（assets/3d/*.glb，共约 3.3 MB）【故意不预缓存】，
 //       它们在解锁/打开 3D 时按需 fetch，然后自动进入 cache-first，避免首屏下载全量。
-const CACHE = "lucky-star-v11";
+const CACHE = "lucky-star-v12";
 
 const CORE = [
   "./",
@@ -106,14 +106,27 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// 缓存键统一去掉查询串（?v=xxx）：
+//   · index.html 里的 ?v=0.6.2 一变，URL 就变 → 必然走网络拿新内容（缓存击穿）
+//   · 但缓存里存的仍是无查询串的键 → 仍能命中 CORE 预缓存的同一份文件（离线不破）
+function cacheKey(request) {
+  const u = new URL(request.url);
+  if (!u.search) return request;
+  u.search = "";
+  return new Request(u.toString(), { method: "GET" });
+}
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(request);
-    if (res && res.ok) cache.put(request, res.clone());
+    // cache: "reload" 强制绕过浏览器自己的 HTTP 启发式缓存。
+    // 否则即使 SW 层是 network-first，fetch() 仍可能被浏览器缓存直接满足，
+    // 拿到旧的 CSS/JS —— 这正是“F5 也修不好”的元凶之一。
+    const res = await fetch(request, { cache: "reload" });
+    if (res && res.ok) cache.put(cacheKey(request), res.clone());
     return res;
   } catch (err) {
-    const hit = await cache.match(request);
+    const hit = await cache.match(cacheKey(request));
     if (hit) return hit;
     if (request.mode === "navigate") {
       const idx = await cache.match("./index.html");
@@ -125,10 +138,11 @@ async function networkFirst(request) {
 
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE);
-  const hit = await cache.match(request);
+  const key = cacheKey(request);
+  const hit = await cache.match(key);
   if (hit) return hit;
   const res = await fetch(request);
-  if (res && res.ok) cache.put(request, res.clone());
+  if (res && res.ok) cache.put(key, res.clone());
   return res;
 }
 

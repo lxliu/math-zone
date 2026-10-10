@@ -52,7 +52,10 @@ console.log(`幸运星计算乐园 v${APP_VERSION}`);
 // 注册 Service Worker（仅 http/https）
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW 注册失败", e));
+    // 带上版本号：sw.js 的 URL 一变，浏览器就必然当作新 SW 安装，
+    // 激活后会自动删掉旧 Cache Storage 并接管（配合下面的 controllerchange 自动刷新）。
+    // 这是“发版后 F5 就能拿到新版”的关键（sw.js 自身会被浏览器缓存最长 24 小时）。
+    navigator.serviceWorker.register(`sw.js?v=${APP_VERSION}`).catch((e) => console.warn("SW 注册失败", e));
   });
   // 新版 Service Worker 接管后自动刷新一次，避免停留在旧缓存
   let reloaded = false;
@@ -60,6 +63,19 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     if (reloaded) return;
     reloaded = true;
     location.reload();
+  });
+
+  // 回到前台时主动检查一次更新（节流 5 分钟）：
+  // SPA 长时间挂着不动时，浏览器不会自己去做 SW 更新检查。
+  let lastCheck = 0;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    const now = Date.now();
+    if (now - lastCheck < 5 * 60 * 1000) return;
+    lastCheck = now;
+    navigator.serviceWorker.getRegistration()
+      .then((reg) => reg && reg.update())
+      .catch(() => {});
   });
 }
 

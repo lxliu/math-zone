@@ -98,7 +98,7 @@
 .chip { padding: 12px 18px; border-radius: var(--radius-pill); background: #fff; border: 2px solid #E7E7F0; font-weight: 800; cursor: pointer; }
 .chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
 .avatar-choice { width: 76px; height: 76px; border-radius: 50%; background: #FFF3DD; padding: 6px; border: 3px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
-.avatar-choice img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.avatar-choice img { width: 100%; height: 100%; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; flex: none; object-fit: contain; display: block; }
 .avatar-choice.on { border-color: var(--primary); }
 
 @media (max-width: 900px) {

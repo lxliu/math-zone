@@ -42,6 +42,20 @@ iPad 上：
 
 其他可选：Netlify / Vercel 导入该仓库即可。
 
+## 发版三步（缓存版本号）
+
+改完代码发布前，把这三处版本号对齐（现在是 `0.6.2`）：
+
+| 文件 | 改什么 | 为什么 |
+|---|---|---|
+| `index.html` | 5 处 `?v=0.6.2`（4 个 CSS + `js/main.js`） | 纯静态 HTML 读不到 JS 常量，只能手改；URL 一变就必然缓存击穿 |
+| `js/constants.js` | `APP_VERSION` | 会拼进 `sw.js?v=`；sw.js 的 URL 一变，浏览器必然装新 SW 并清旧缓存 |
+| `sw.js` | `CACHE`（如 `lucky-star-v12`） | 手动保险：换个新缓存桶 |
+
+> 这三处外面还包了两层自动防护，日常 F5 就会拿到新版：
+> `sw.js` 的 `networkFirst()` 用 `fetch(request, { cache: "reload" })` 绕过浏览器 HTTP 缓存；
+> `sw.js` 的 `cacheKey()` 把 `?v=` 去掉再存/取，所以版本串既能击穿缓存、又不破坏离线。
+
 ## 数据
 
 - 存储位置：浏览器 `localStorage`，键名 `luckyStar.v1`

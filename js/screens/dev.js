@@ -206,7 +206,15 @@ export function render() {
     else if (act === "clear") {
       if (confirm("确定清空全部数据？")) { clearState(); location.reload(); }
     } else if (act === "unreg-sw") {
-      if ("serviceWorker" in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map((r) => r.unregister())); }
+      // 必须连 Cache Storage 一起删：只 unregister 的话缓存原封不动，看起来“点了没用”。
+      if ("serviceWorker" in navigator) {
+        const rs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(rs.map((r) => r.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
       location.reload();
     }
   });
