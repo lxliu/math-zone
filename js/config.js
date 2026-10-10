@@ -16,6 +16,13 @@ export const STARS_PER_QUESTION = 2;
 export const DEFAULT_PER_TYPE = 3;
 export const MAX_PER_TYPE = 20;
 
+// ---------------------------------------------------------------------------
+// 3D 模型：Kenney「Cube Pets 2.0」(CC0) glTF 模型开关
+// true  = 用 assets/3d/animal-*.glb（默认）
+// false = 回退到旧的程序化低多边形模型（iPad 上出问题时的一键兼底，见调试面板）
+// ---------------------------------------------------------------------------
+export const USE_GLB_MODELS = true;
+
 export function defaultConfig() {
   const c = {};
   for (const t of QUESTION_TYPES) c[t.id] = DEFAULT_PER_TYPE;

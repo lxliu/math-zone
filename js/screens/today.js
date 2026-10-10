@@ -8,7 +8,7 @@ import { TOTAL_ANIMALS } from "../constants.js";
 import { getConfig, totalQuestions } from "../config.js";
 import { animalSrc } from "../animals.js";
 
-const MASCOT = "common-06";
+const MASCOT = "rare-01"; // 小火狐
 
 export function render() {
   const a = currentAccount();

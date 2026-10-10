@@ -1,11 +1,34 @@
-// 真 3D 查看器（three.js）：自由环绕 + 缩放 + 自动旋转 + 光照阴影
+// 真 3D 查看器（three.js r160）：glTF 模型 + 骨骼动画 + 环境光照 + 点击互动
 import * as THREE from "../vendor/three.module.min.js";
 import { OrbitControls } from "../vendor/OrbitControls.js";
+import { RoomEnvironment } from "../vendor/addons/RoomEnvironment.js";
 import { build3DModel, has3DModel } from "./models/index.js";
+import { CHEER_CLIP, LOOP_CLIP, TAP_CLIP } from "./models/registry.js";
 import { el } from "./utils.js";
 import { play as sfx } from "./audio.js";
 
-export function open3DModel(animal) {
+/* ------------------------------------------------------------------ */
+/* 小工具：生成径向渐变贴图（地面光晕 / 接地阴影）                        */
+/* ------------------------------------------------------------------ */
+function radialTexture(stops, size = 256) {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  for (const [at, col] of stops) g.addColorStop(at, col);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * 打开某只动物的 3D 查看器。
+ * @returns {Promise<boolean>} WebGL 不可用 / 没有模型 / 加载失败 → false（调用方回退到 2D 悬浮）
+ */
+export async function open3DModel(animal, opts = {}) {
   if (!has3DModel(animal.id)) return false;
 
   const root = document.getElementById("overlay-root");
@@ -13,8 +36,11 @@ export function open3DModel(animal) {
   const box = el("div", "viewer");
   box.innerHTML = `
     <button class="viewer-close btn ghost sm">✕</button>
-    <div class="three-stage"></div>
+    <div class="three-stage">
+      <div class="three-loading"><span class="three-spin">⭐</span><span class="three-loading-text">正在唤醒它…</span></div>
+    </div>
     <div class="viewer-name">${animal.name}</div>
+    <div class="viewer-hint">👆 点一点它 · 拖动可以转圈圈</div>
     <div class="viewer-ctrls">
       <button class="btn ghost sm" data-act="reset">↺ 重置视角</button>
     </div>
@@ -24,6 +50,7 @@ export function open3DModel(animal) {
 
   const stage = box.querySelector(".three-stage");
 
+  /* --- WebGL 可用性 --- */
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -34,61 +61,127 @@ export function open3DModel(animal) {
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // 色彩管线：sRGB 输出 + ACES 色调映射（比默认的线性输出柔和很多）
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
   renderer.setClearColor(0x000000, 0);
   stage.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
 
-  // 光照
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe8ff, 1.05));
-  const dir = new THREE.DirectionalLight(0xffffff, 2.1);
-  dir.position.set(3.5, 6, 4.5);
-  dir.castShadow = true;
-  dir.shadow.mapSize.set(1024, 1024);
-  dir.shadow.camera.near = 1;
-  dir.shadow.camera.far = 22;
-  dir.shadow.camera.left = -5;
-  dir.shadow.camera.right = 5;
-  dir.shadow.camera.top = 5;
-  dir.shadow.camera.bottom = -5;
-  scene.add(dir);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+  /* --- 环境贴图（PMREM + RoomEnvironment）：让方块的高光有层次 --- */
+  let envRT = null;
+  try {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    envRT = pmrem.fromScene(new RoomEnvironment(renderer), 0.04);
+    scene.environment = envRT.texture;
+    pmrem.dispose();
+  } catch (e) {
+    console.warn("[3d] 环境贴图生成失败，跳过", e);
+  }
+
+  /* --- 光照 --- */
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe8ff, 0.85));
+  const key = new THREE.DirectionalLight(0xffffff, 2.4);
+  key.position.set(3.5, 6.5, 4.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 24;
+  key.shadow.camera.left = -5;
+  key.shadow.camera.right = 5;
+  key.shadow.camera.top = 5;
+  key.shadow.camera.bottom = -5;
+  key.shadow.bias = -0.0012;
+  key.shadow.normalBias = 0.02;
+  key.shadow.radius = 3;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffe9c9, 0.5);
   fill.position.set(-4, 3, -3.5);
   scene.add(fill);
 
-  // 模型
-  const group = build3DModel(animal.id);
-  if (!group) { backdrop.remove(); renderer.dispose?.(); return false; }
+  /* --- 模型 --- */
+  const built = await build3DModel(animal.id);
+  if (!built) {
+    // 注意：此时 ro / raf / controls 还没建，不能引用
+    renderer.dispose();
+    envRT?.dispose();
+    backdrop.remove();
+    return false;
+  }
+  const group = built.group;
+  const clips = built.animations || [];
+  const isGlb = built.source === "glb";
+
+  group.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = false;
+      o.frustumCulled = false;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m) continue;
+        // 环境反射强度调低一点，避免方块像塑料板
+        if ("envMapIntensity" in m) m.envMapIntensity = 0.55;
+        m.needsUpdate = true;
+      }
+    }
+  });
   scene.add(group);
 
-  // 地面（接阴影）
+  /* --- 包围盒归一化：统一构图 --- */
   const bbox = new THREE.Box3().setFromObject(group);
   const size = bbox.getSize(new THREE.Vector3());
+  const groundY = bbox.min.y;
+
+  // 地面：暖色径向渐变（中心亮、边缘淡）
+  const groundTex = radialTexture([
+    [0.0, "#fffaf0"],
+    [0.55, "#fdf1dc"],
+    [1.0, "#f2e2c6"],
+  ]);
   const ground = new THREE.Mesh(
     new THREE.CircleGeometry(Math.max(2.6, size.x * 2.4), 56),
-    new THREE.MeshStandardMaterial({ color: 0xfff3dd, roughness: 1, metalness: 0 })
+    new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1, metalness: 0 })
   );
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = bbox.min.y - 0.01;
+  ground.position.y = groundY - 0.01;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  const targetY = bbox.min.y + size.y * 0.5;
+  // 接地阴影贴片（在真实投影之外再补一层柔和的"落地感"）
+  const contactTex = radialTexture([
+    [0.0, "rgba(70,50,20,.42)"],
+    [0.45, "rgba(70,50,20,.20)"],
+    [1.0, "rgba(70,50,20,0)"],
+  ]);
+  const contact = new THREE.Mesh(
+    new THREE.PlaneGeometry(Math.max(2.0, size.x * 2.1), Math.max(2.0, size.z * 2.1)),
+    new THREE.MeshBasicMaterial({ map: contactTex, transparent: true, depthWrite: false, opacity: 0.9 })
+  );
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.y = groundY - 0.005;
+  scene.add(contact);
 
-  // 相机 / 控制（缩放参照手机照片：幅度大、可贴近）
+  const targetY = groundY + size.y * 0.5;
+
+  /* --- 相机 / 控制 --- */
   const modelR = Math.max(0.6, size.length() * 0.5);
-  const dist = Math.max(3.6, size.length() * 1.15);
+  const dist = Math.max(3.6, size.length() * (isGlb ? 1.05 : 1.15));
+  const homeCam = new THREE.Vector3(dist * 0.15, targetY + size.y * 0.5, dist);
   camera.near = 0.05;
-  camera.position.set(dist * 0.15, targetY + size.y * 0.55, dist);
+  camera.position.copy(homeCam);
   camera.updateProjectionMatrix();
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.09;
   controls.enablePan = false;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 1.6;
+  controls.autoRotate = !clips.length; // 有 idle 动画时不自动转，避免"乱晃"
+  controls.autoRotateSpeed = 1.4;
   controls.zoomSpeed = 1.5;
   controls.zoomToCursor = false;
   controls.minDistance = Math.max(1.1, modelR * 0.9);
@@ -98,6 +191,46 @@ export function open3DModel(animal) {
   controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
   controls.target.set(0, targetY, 0);
   controls.update();
+
+  /* --- 动画 --- */
+  let mixer = null;
+  let actions = {};
+  let loopAction = null;
+  let oneShot = null;
+  if (clips.length) {
+    mixer = new THREE.AnimationMixer(group);
+    for (const clip of clips) {
+      const a = mixer.clipAction(clip);
+      actions[clip.name] = a;
+    }
+    loopAction = actions[LOOP_CLIP] || actions[clips[0].name] || null;
+    if (loopAction) {
+      loopAction.setLoop(THREE.LoopRepeat, Infinity);
+      loopAction.play();
+    }
+  }
+
+  /** 播一次性动画（点它 / 庆祝），结束后淡回 idle */
+  function playOnce(name) {
+    if (!mixer) return;
+    const a = actions[name];
+    if (!a) return;
+    if (oneShot && oneShot !== a) oneShot.fadeOut(0.15);
+    oneShot = a;
+    a.reset();
+    a.setLoop(THREE.LoopOnce, 1);
+    a.clampWhenFinished = true;
+    a.setEffectiveWeight(1);
+    a.fadeIn(0.12).play();
+    if (loopAction) loopAction.setEffectiveWeight(0.25);
+    clearTimeout(playOnce._t);
+    const dur = (a.getClip().duration || 0.4) * 1000;
+    playOnce._t = setTimeout(() => {
+      a.fadeOut(0.22);
+      if (loopAction) loopAction.setEffectiveWeight(1);
+      oneShot = null;
+    }, dur + 60);
+  }
 
   function resize() {
     const w = stage.clientWidth || 1;
@@ -110,26 +243,67 @@ export function open3DModel(animal) {
   ro.observe(stage);
   resize();
 
+  /* --- 点击互动（拖拽不算点击） --- */
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  let downAt = null;
+  function onDown(e) {
+    downAt = { x: e.clientX, y: e.clientY, t: performance.now() };
+  }
+  function onUp(e) {
+    if (!downAt) return;
+    const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+    const quick = performance.now() - downAt.t < 450;
+    downAt = null;
+    if (moved > 8 || !quick) return; // 是拖动/长按，不算点击
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    if (ray.intersectObject(group, true).length) {
+      playOnce(TAP_CLIP);
+      sfx("star");
+    }
+  }
+  renderer.domElement.addEventListener("pointerdown", onDown);
+  renderer.domElement.addEventListener("pointerup", onUp);
+
+  /* --- 渲染循环 --- */
   let raf = 0;
   const clock = new THREE.Clock();
+  let firstFrame = false;
   function tick() {
-    clock.getDelta();
+    const dt = clock.getDelta();
+    if (mixer) mixer.update(dt);
     controls.update();
     renderer.render(scene, camera);
+    if (!firstFrame) {
+      firstFrame = true;
+      stage.querySelector(".three-loading")?.classList.add("gone");
+      box.classList.add("ready");
+    }
     raf = requestAnimationFrame(tick);
   }
   raf = requestAnimationFrame(tick);
 
+  /* --- 关闭与清理 --- */
   function close() {
     cancelAnimationFrame(raf);
+    clearTimeout(playOnce._t);
+    renderer.domElement.removeEventListener("pointerdown", onDown);
+    renderer.domElement.removeEventListener("pointerup", onUp);
     ro.disconnect();
     controls.dispose();
+    if (mixer) { mixer.stopAllAction(); mixer.uncacheRoot(group); }
     renderer.dispose();
+    envRT?.dispose();
+    groundTex.dispose();
+    contactTex.dispose();
     group.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
       if (o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
-        for (const m of mats) m.dispose();
+        for (const m of mats) { if (m && m.map) m.map.dispose(); m?.dispose(); }
       }
     });
     backdrop.remove();
@@ -137,13 +311,20 @@ export function open3DModel(animal) {
 
   box.querySelector(".viewer-close").addEventListener("click", close);
   box.querySelector('[data-act="reset"]').addEventListener("click", () => {
-    camera.position.set(dist * 0.15, targetY + size.y * 0.55, dist);
+    camera.position.copy(homeCam);
     controls.target.set(0, targetY, 0);
-    controls.zoomSpeed = 1.5;
     controls.update();
   });
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
 
+  // 解锁仪式：进门先来一段庆祝动作
+  if (opts.cheer && actions[opts.cheer]) setTimeout(() => playOnce(opts.cheer), 260);
+
   sfx("star");
   return true;
+}
+
+/** 解锁仪式用：进门就是一段庆祝动作 */
+export function cheer3DModel(animal) {
+  return open3DModel(animal, { cheer: CHEER_CLIP });
 }

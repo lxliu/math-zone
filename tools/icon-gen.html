@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>gen…</title>
+  <style>body{margin:0;background:#222;color:#fff;font:13px ui-monospace,Menlo,monospace}#log{padding:10px;white-space:pre-wrap}canvas{display:none}</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<pre id="log">starting…</pre>
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+import { RoomEnvironment } from '../vendor/addons/RoomEnvironment.js';
+import { ANIMALS } from '../js/animals.js';
+import { loadAnimalGlb } from '../js/models/gltf.js';
+
+const SIZE = Number(new URLSearchParams(location.search).get('size') || 256);
+const FORMAT = (new URLSearchParams(location.search).get('format') || 'webp').toLowerCase();
+const MIME = FORMAT === 'webp' ? 'image/webp' : 'image/png';
+const logEl = document.getElementById('log');
+const log = (s) => { logEl.textContent += '\n' + s; };
+
+const cv = document.getElementById('cv');
+cv.width = cv.height = SIZE;
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(SIZE, SIZE, false);
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xe7eefc, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(3, 6, 5);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.camera.near = 0.5;
+key.shadow.camera.far = 20;
+key.shadow.camera.left = -3; key.shadow.camera.right = 3;
+key.shadow.camera.top = 3; key.shadow.camera.bottom = -3;
+key.shadow.bias = -0.0012;
+key.shadow.normalBias = 0.015;
+key.shadow.radius = 3;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffe9c9, 0.45);
+fill.position.set(-4, 3, -4);
+scene.add(fill);
+
+function radialTex(stops, size = 256) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d').createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  for (const [at, col] of stops) g.addColorStop(at, col);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/* 统一的画面构图：所有动物按"包围球半径归一化"，图标视觉大小一致 */
+const SPHERE_R = 1.0;          // 归一化后的包围球半径
+const DIST = SPHERE_R * 3.35;  // 相机距离
+const AZ = THREE.MathUtils.degToRad(-28); // 水平：略微偏右的 3/4 视角
+const EL = THREE.MathUtils.degToRad(13);  // 俯仰：略高于平视
+
+async function renderOne(animal) {
+  const gltf = await loadAnimalGlb(animal.id);
+  const group = gltf.scene;
+
+  // 用 static 姿势（最稳定，不呼吸不晃）
+  const mixer = new THREE.AnimationMixer(group);
+  const st = gltf.animations.find((c) => c.name === 'static');
+  if (st) { mixer.clipAction(st).play(); mixer.update(0.1); }
+
+  group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(group);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const r = 0.5 * size.length();
+  const k = SPHERE_R / r;
+  group.scale.setScalar(k);
+  group.position.set(-center.x * k, -center.y * k, -center.z * k);
+  group.updateMatrixWorld(true);
+
+  group.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true;
+    o.frustumCulled = false;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) { if (m && 'envMapIntensity' in m) m.envMapIntensity = 0.5; }
+  });
+  scene.add(group);
+
+  const half = SPHERE_R * 0.92;
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(half * 2.6, half * 2.6),
+    new THREE.MeshBasicMaterial({ map: radialTex([[0, 'rgba(72,52,24,.34)'], [0.5, 'rgba(72,52,24,.14)'], [1, 'rgba(72,52,24,0)']]), transparent: true, depthWrite: false })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -half;
+  scene.add(ground);
+
+  camera.position.set(
+    DIST * Math.cos(EL) * Math.sin(AZ),
+    DIST * Math.sin(EL),
+    DIST * Math.cos(EL) * Math.cos(AZ)
+  );
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+
+  renderer.render(scene, camera);
+  let dataUrl = cv.toDataURL(MIME, 0.92);
+  // 某些环境不支持 webp 编码，会静默退回 png —— 这里直接报错，避免生成错后缀的文件
+  if (FORMAT === 'webp' && !dataUrl.startsWith('data:image/webp')) {
+    throw new Error('浏览器不支持 webp 编码，退回 png 重跑');
+  }
+
+  // 清理
+  scene.remove(group); scene.remove(ground);
+  ground.geometry.dispose(); ground.material.map.dispose(); ground.material.dispose();
+  group.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { if (m && m.map) m.map.dispose(); m?.dispose(); } }
+  });
+  mixer.uncacheRoot(group);
+  return dataUrl;
+}
+
+async function save(relPath, dataUrl) {
+  const blob = await (await fetch(dataUrl)).blob();
+  const res = await fetch('/save?path=' + encodeURIComponent(relPath), { method: 'POST', body: blob });
+  if (!res.ok) throw new Error('save failed ' + relPath + ' ' + res.status);
+  return blob.size;
+}
+
+(async () => {
+  const ext = FORMAT === 'webp' ? 'webp' : 'png';
+  log(`生成 ${ANIMALS.length} 张（${SIZE}px ${FORMAT}）`);
+  let fails = 0, total = 0;
+  for (const a of ANIMALS) {
+    try {
+      const url = await renderOne(a);
+      const rel = `assets/animals/${a.id}.${ext}`;
+      const bytes = await save(rel, url);
+      total += bytes;
+      log(`  ✅ ${a.id.padEnd(10)} ${a.name.padEnd(6)} ${(bytes / 1024).toFixed(1)} KB`);
+    } catch (e) {
+      fails++;
+      log(`  ❌ ${a.id} ${e.message}`);
+    }
+  }
+  log(`\n合计 ${(total / 1024 / 1024).toFixed(2)} MB | 失败 ${fails}`);
+  document.title = fails ? `FAIL-${fails}` : 'DONE';
+})();
+</script>
+</body>
+</html>

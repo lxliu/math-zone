@@ -193,3 +193,15 @@
 /* ================= 真 3D 舞台（three.js） ================= */
 .three-stage { position: relative; width: 100%; height: 380px; border-radius: var(--radius-md); overflow: hidden; background: radial-gradient(circle at 50% 32%, #ffffff, #eef4fb 70%); }
 .three-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+/* 加载态：先给个星星转圈，避免白屏 */
+.three-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; transition: opacity .35s ease; z-index: 2; }
+.three-loading.gone { opacity: 0; pointer-events: none; }
+.three-spin { font-size: 40px; animation: three-spin 1.1s linear infinite; }
+@keyframes three-spin { from { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.18); } to { transform: rotate(360deg) scale(1); } }
+.three-loading-text { font-size: 14px; font-weight: 700; color: var(--muted, #8a7f6d); }
+
+/* 3D 画面淡入 */
+.viewer .three-stage canvas { opacity: 0; transition: opacity .45s ease; }
+.viewer.ready .three-stage canvas { opacity: 1; }
+.viewer-hint { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted, #8a7f6d); margin-top: 4px; }

@@ -1,6 +1,10 @@
 // localStorage 读写 + schema 版本/迁移
+import { ANIMALS, LEGACY_ANIMAL_MAP, animalById } from "./animals.js";
+
 const KEY = "luckyStar.v1";
 export const SCHEMA_VERSION = 1;
+// 动物图鉴版本：1 = 旧的 20 只，2 = Kenney Cube Pets 的 24 只
+export const ANIMAL_ROSTER_VERSION = 2;
 
 export function loadState() {
   try {
@@ -40,8 +44,66 @@ function migrate(data) {
     if (!a.sessions || typeof a.sessions !== "object") a.sessions = {};
     if (!a.settings) a.settings = { sound: true, volume: 0.7 };
     migrateQuestionsConfig(a);
+    migrateAnimals(a);
   }
   return data;
+}
+
+// ---------------------------------------------------------------------------
+// 动物图鉴迁移：20 只 → 24 只（Kenney Cube Pets）
+//  1) 旧 id 按 LEGACY_ANIMAL_MAP 换成新 id（同种动物保留，已移除的换同档新动物）
+//  2) 升档/去重导致的缺口，用【同档位】里最便宜且未拥有的动物补足，尽量保住档位结构
+//  3) 总数仍不足时再按全局最便宜补足
+//  4) 头像若指向旧动物，一并迁移；迁移后不拥有的动物头像回退到第一个拥有的动物
+// 原则：绝不退款、绝不清空——孩子到手的动物数量只会变多不会变少。
+// ---------------------------------------------------------------------------
+function migrateAnimals(acc) {
+  if (acc.animalRosterVersion === ANIMAL_ROSTER_VERSION) return;
+  if (!Array.isArray(acc.ownedAnimals)) acc.ownedAnimals = [];
+
+  const oldIds = acc.ownedAnimals.slice();
+  const totalBefore = oldIds.length;
+
+  const owned = [];
+  const addOwned = (id) => { if (id && !owned.includes(id)) owned.push(id); };
+
+  for (const id of oldIds) {
+    const mapped = LEGACY_ANIMAL_MAP[id] || (animalById(id) ? id : null);
+    if (mapped) addOwned(mapped);
+  }
+
+  // 按档位补足
+  const tiers = ["common", "rare", "epic", "legend"];
+  const countIn = (list, tier) => list.filter((id) => animalById(id)?.tier === tier).length;
+  for (const tier of tiers) {
+    const want = countIn(oldIds.map((id) => LEGACY_ANIMAL_MAP[id] || id).filter((id) => animalById(id)), tier);
+    const got = countIn(owned, tier);
+    if (got >= want) continue;
+    const pool = ANIMALS
+      .filter((a) => a.tier === tier && !owned.includes(a.id))
+      .sort((a, b) => a.price - b.price || a.id.localeCompare(b.id));
+    for (let i = 0; i < want - got && i < pool.length; i++) addOwned(pool[i].id);
+  }
+
+  // 总数仍不足（例如同档池子不够）→ 全局最便宜补齐
+  const needTotal = totalBefore - owned.length;
+  if (needTotal > 0) {
+    const pool = ANIMALS
+      .filter((a) => !owned.includes(a.id))
+      .sort((a, b) => a.price - b.price || a.id.localeCompare(b.id));
+    for (let i = 0; i < needTotal && i < pool.length; i++) addOwned(pool[i].id);
+  }
+
+  // 保持原顺序（按价格从低到高，图鉴观感一致）
+  acc.ownedAnimals = owned.sort((a, b) => (animalById(a)?.price ?? 0) - (animalById(b)?.price ?? 0));
+
+  // 头像迁移
+  if (acc.avatarId && !String(acc.avatarId).startsWith("kid-")) {
+    const mapped = LEGACY_ANIMAL_MAP[acc.avatarId] || acc.avatarId;
+    acc.avatarId = acc.ownedAnimals.includes(mapped) ? mapped : (acc.ownedAnimals[0] || "kid-boy");
+  }
+
+  acc.animalRosterVersion = ANIMAL_ROSTER_VERSION;
 }
 
 // 题量配置：6 类 → 8 类迁移

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>3D 素材自检</title>
+  <link rel="stylesheet" href="../styles/tokens.css" />
+  <link rel="stylesheet" href="../styles/base.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <style>body{background:#fff;padding:12px}#out{font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}#overlay-root{position:relative}</style>
+</head>
+<body>
+<div id="overlay-root"></div>
+<pre id="out">running…</pre>
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+import { ANIMALS } from '../js/animals.js';
+import { build3DModel } from '../js/models/index.js';
+import { open3DModel } from '../js/threeViewer.js';
+
+const out = document.getElementById('out');
+const params = new URLSearchParams(location.search);
+const mode = params.get('mode') || 'logic';
+const lines = [];
+const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); };
+
+let fails = 0;
+
+async function logicTest() {
+  log(`逻辑自检：${ANIMALS.length} 只`);
+  let totalTris = 0, totalAnim = 0, minH = 9, maxH = 0;
+  for (const a of ANIMALS) {
+    try {
+      const res = await build3DModel(a.id);
+      if (!res) { log(`  ❌ ${a.id} ${a.name} → null`); fails++; continue; }
+      if (res.source !== 'glb') { log(`  ❌ ${a.id} ${a.name} → source=${res.source}（应为 glb）`); fails++; continue; }
+      let meshes = 0, tris = 0;
+      res.group.traverse((o) => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+      const bb = new THREE.Box3().setFromObject(res.group);
+      const size = bb.getSize(new THREE.Vector3());
+      const animNames = res.animations.map((c) => c.name).sort();
+      totalTris += tris; totalAnim += animNames.length;
+      minH = Math.min(minH, bb.min.y); maxH = Math.max(maxH, size.y);
+      const ok8 = animNames.length === 8;
+      if (!ok8) fails++;
+      log(`  ${ok8 ? '✅' : '❌'} ${a.id.padEnd(10)} ${a.name.padEnd(6)} 网格${String(meshes).padStart(2)} 面${String(tris).padStart(4)} 高${size.y.toFixed(2)} 底Y${bb.min.y.toFixed(3)} 动画${animNames.length} [${animNames.join(',')}]`);
+    } catch (e) {
+      log(`  ❌ ${a.id} 异常：${e.message}`); fails++;
+    }
+  }
+  log('');
+  log(`总面数 ${totalTris}｜总动画片段 ${totalAnim}｜地面最低 Y ${minH.toFixed(3)}｜最高身高 ${maxH.toFixed(2)}`);
+  log(fails ? `RESULT: FAIL (${fails})` : 'RESULT: PASS');
+  document.title = fails ? `FAIL-${fails}` : 'PASS';
+}
+
+async function visualTest() {
+  const ids = (params.get('ids') || 'common-01,common-03,rare-05,legend-02').split(',');
+  log(`视觉自检：${ids.join(', ')}`);
+  for (const id of ids) {
+    const animal = ANIMALS.find((a) => a.id === id);
+    const ok = await open3DModel(animal, { cheer: id === ids[0] });
+    log(`  ${ok ? '✅' : '❌'} ${id} ${animal.name} → ${ok}`);
+    await new Promise((r) => setTimeout(r, Number(params.get('gap') || 1800)));
+    if (!ok) fails++;
+  }
+  log(fails ? `RESULT: FAIL (${fails})` : 'RESULT: PASS');
+  document.title = fails ? `FAIL-${fails}` : 'PASS';
+}
+
+(mode === 'visual' ? visualTest() : logicTest()).catch((e) => {
+  log('❌ 顶层异常：' + (e && e.stack || e));
+  document.title = 'ERROR';
+});
+</script>
+</body>
+</html>

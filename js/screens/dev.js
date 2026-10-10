@@ -8,7 +8,8 @@ import { todayKey, el } from "../utils.js";
 import { isDevEnabled, checkDevPassword } from "../dev.js";
 import { openAnimal3D } from "./animals.js";
 import { resetTodaySession } from "../game.js";
-import { getConfig, totalStars } from "../config.js";
+import { getConfig, totalStars, USE_GLB_MODELS } from "../config.js";
+import { getGlbOverride, setGlbOverride } from "../models/registry.js";
 import { clearState } from "../storage.js";
 import { exportBackup, importBackup } from "../backup.js";
 
@@ -48,6 +49,11 @@ export function render() {
 
   const wrap = document.createElement("div");
   wrap.className = "screen";
+  // 3D 模型来源：glb / proc（未覆盖时跟随 config 里的默认值）
+  const curSrc = () => {
+    const ov = getGlbOverride();
+    return (ov === null ? USE_GLB_MODELS : ov) ? "glb" : "proc";
+  };
   wrap.innerHTML = `
     <div class="card" style="margin-bottom:14px">
       <div class="row">
@@ -97,6 +103,16 @@ export function render() {
         <span class="chip" data-act="unreg-sw">注销 SW 并刷新</span>
       </div>
       <input type="file" id="dev-import" accept="application/json" hidden>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3 style="margin-bottom:10px">3D 模型来源</h3>
+      <div class="chips" id="model-src">
+        <span class="chip ${curSrc() === 'glb' ? 'on' : ''}" data-act="src-glb">glTF（Kenney Cube Pets）</span>
+        <span class="chip ${curSrc() === 'proc' ? 'on' : ''}" data-act="src-proc">程序化低多边形</span>
+        <span class="chip" data-act="src-default">恢复默认（${USE_GLB_MODELS ? 'glTF' : '程序化'}）</span>
+      </div>
+      <p class="muted" style="margin-top:8px;font-size:13px">当前：${curSrc() === 'glb' ? 'glTF 模型' : '程序化模型'}（切到程序化可立即验证兵底路径）</p>
     </div>
 
     <div class="card" style="margin-bottom:14px">
@@ -150,6 +166,17 @@ export function render() {
     if (act === "unlock-all") unlockIds(ANIMALS.map((x) => x.id));
     else if (act === "lock-all") { commit((s) => { s.accounts.find((x) => x.id === a.id).ownedAnimals = []; }); render(); }
     else if (act === "unlock-tier") unlockIds(ANIMALS.filter((x) => x.tier === c.dataset.tier).map((x) => x.id));
+  });
+
+  wrap.querySelector("#model-src").addEventListener("click", (e) => {
+    const c = e.target.closest("[data-act]");
+    if (!c) return;
+    sfx("button");
+    const act = c.dataset.act;
+    if (act === "src-glb") { setGlbOverride(true); toast("已切到 glTF 模型"); }
+    else if (act === "src-proc") { setGlbOverride(false); toast("已切到程序化模型（兵底路径）"); }
+    else if (act === "src-default") { setGlbOverride(null); toast("已恢复默认"); }
+    render();
   });
 
   wrap.querySelector("#misc").addEventListener("click", async (e) => {

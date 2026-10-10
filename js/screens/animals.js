@@ -71,7 +71,7 @@ export function render() {
               if (tryUnlock(a.id, animal.id)) {
                 await unlockRitual(animal);
                 render();
-                openAnimal3D(animal); // 翻牌后自动进入 3D 查看
+                openAnimal3D(animal, { cheer: true }); // 翻牌后自动进入 3D 并跳一段庆祝动作
               }
             },
           },
@@ -151,9 +151,9 @@ function unlockRitual(animal) {
 }
 
 /* ---------------- 真 3D 优先；无模型则回退悬浮自转 ---------------- */
-export function openAnimal3D(animal) {
-  if (open3DModel(animal)) return;
-  open3DFloat(animal);
+export async function openAnimal3D(animal, opts) {
+  const ok = await open3DModel(animal, opts);
+  if (!ok) open3DFloat(animal);
 }
 
 function open3DFloat(animal) {

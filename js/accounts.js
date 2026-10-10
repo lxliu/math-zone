@@ -1,6 +1,7 @@
 // 账号：创建 / 列表 / 切换 / 头像
 import { commit, state } from "./store.js";
 import { uid } from "./utils.js";
+import { ANIMAL_ROSTER_VERSION } from "./storage.js";
 
 // 初始可选的 2 个小朋友头像
 export const KID_AVATARS = [
@@ -24,6 +25,7 @@ export function createAccount({ name, gender, birthDate, avatarId }) {
     createdAt: Date.now(),
     stars: 0,
     ownedAnimals: [],
+    animalRosterVersion: ANIMAL_ROSTER_VERSION,
     sessions: {},
     settings: { sound: true, volume: 0.7 },
   };

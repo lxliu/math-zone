@@ -58,14 +58,35 @@ styles/                    tokens / base / components / screens
 assets/
   icons/                   PWA 图标
   avatars/                 初始头像（kid-boy / kid-girl）
-  animals/                 动物 SVG（里程碑 6）
+  animals/                 24 张动物图标（.webp，由 3D 模型渲染生成）
+  3d/                      24 个 Kenney Cube Pets 2.0 模型（.glb + 图集）
+    CREDITS.md             素材来源 / 许可证 / 动画清单 / 关键约定
+    animal-*.glb           每只一个 glb，含 8 条动画
+    Textures/colormap.png  全 24 只共用的渐变图集（GLB 外链，必须同级保留）
+tools/                     开发工具（不参与线上运行）
+  icon-gen.html            由 GLB 批量渲染动物图标（256px WebP）
+  icon-gen-server.py       配套落盘服务
+  3d-selftest.html         3D 素材自检（逐只校验模型 / 动画 / 地面高度）
+  smoke.html / smoke-server.py  注入存档的界面冒烟测试
 js/
   main router store storage utils ui audio anim
   accounts animals shop calendar settings backup
-  game scoring constants keypad
-  questions/               level1-4 + tricks + index（组卷）
-  screens/                 setup today difficulty play result calendar animals settings
+  game scoring constants keypad config gate dev
+  threeViewer.js           3D 查看器（glTF + 动画 + 环境光 + 点击互动）
+  models/                  registry（映射表）gltf（加载）index（入口）
+                           lib / animals3d / hedgehog（旧程序化模型，兼底用）
+  questions/               level1-4 + tricks + types + index（组卷）
+  screens/                 setup today play result calendar animals settings parent dev
 ```
+
+## 3D 动物素材
+
+- 模型：[Kenney「Cube Pets」2.0](https://kenney.nl/assets/cube-pets)，**CC0 公共领域**，可商用无需署名
+- 24 只全部带 `static / idle / walk / run / eat / dance / gesture-positive / gesture-negative` 八条动画
+- 每只仅 422–951 三角面、单材质，单只 GLB 89–171 KB（全量 3.3 MB，**解锁时按需加载**，不预缓存）
+- 模型面朝 +Z、脚在 Y=0，无需旋转或偏移；详见 [`assets/3d/CREDITS.md`](assets/3d/CREDITS.md)
+- 图鉴里的 2D 图标由同一批 GLB 渲染而来，所以**图标与 3D 永远一致**；换模型后跑一次 `tools/icon-gen.html` 即可重出
+- 旧名单旧存档会自动迁移（同种动物换 id、已移除的换同档新动物，**不退款、不清空**），见 `js/storage.js` 的 `migrateAnimals()`
 
 ## 里程碑
 
@@ -74,10 +95,12 @@ js/
 - [x] 3. 题库生成器（4 难度 + 巧算 5 子类 + 综合组卷）
 - [x] 4. 答题流程 + 数字键盘 + 计分 + 音效/动画
 - [x] 5. 每日状态机 + 续做 + 错题循环
-- [x] 6. 动物系统（图鉴 / 解锁仪式 / CSS 3D）+ 20 只 SVG + 解锁后可作头像
+- [x] 6. 动物系统（图鉴 / 解锁仪式 / 3D）+ 20 只 SVG + 解锁后可作头像
 - [x] 7. 月度日历看板
 - [x] 8. 导出 / 导入备份
-- [~] 9. iPad Pro / MacBook 真机调优与测试（自动化校验已过，真机待验证）
+- [x] 9. 3D 大升级：换成 Kenney Cube Pets 2.0（24 只，CC0，带 8 条动画）+ 渲染管线升级
+- [x] 10. 图鉴扩到 24 只（10/7/5/2 四档）+ 旧存档迁移 + 图标改由 3D 渲染
+- [~] 11. iPad Pro / MacBook 真机调优与测试（自动化校验已过，真机待验证）
 
 ## 真机测试清单（请在设备上过一遍）
 
@@ -86,7 +109,10 @@ js/
 - [ ] 故意答错若干题 → 出现「再挑战一次」→ 重做至全对
 - [ ] 结算页显示总耗时与幸运星 → 飞星收集动画 → 顶栏星星增加
 - [ ] 顶栏「今日」状态变为「已完成」，今日页按钮禁用
-- [ ] 动物页：余额够时解锁 → 翻牌仪式 → 已解锁可 3D 旋转/缩放
+- [ ] 动物页：余额够时解锁 → 翻牌仪式 → 自动进入 3D 并跳一段庆祝动作
+- [ ] 3D 里点一下动物会做动作；拖动旋转、双指缩放流畅；关闭后无卡顿/不发烫
+- [ ] 3D 加载中看到星星转圈（不是白屏），弱网下稍等也能出
+- [ ] 用旧存档（老的 20 只时代）打开 → 收藏数量不减少、没有动物凭空消失
 - [ ] 设置：把已解锁动物设为头像 → 顶栏头像变化
 - [ ] 日历：今日/已完成/错过状态正确，连续天数正确
 - [ ] 设置 → 导出备份 → 清除站点数据 → 导入备份 → 数据恢复
@@ -95,8 +121,10 @@ js/
 
 ## 玩法规则（已定稿）
 
-- 4 个难度 + 综合；每题幸运星 2/3/4/5，满额 40/60/80/100，综合 70
+- **8 类题型**，每题 **2 颗幸运星**；家长在「家长设置」里为每类配 0–20 题（默认 3 题/类 → 24 题/天 → 48 星/天）
 - 不限时间；**全部做对**才得当天幸运星，差一个 = 0
 - 答错只提示、不给答案；错题循环重做直到全对
 - 每天一次、只能做当天、错过不补；中途退出自动保存进度
 - 计时全程隐藏，只在结算页显示总耗时
+- 图鉴共 **24 只**动物（普通 10 / 稀有 7 / 史诗 5 / 传说 2），单只 40–600 星，全套 5400 星 ≈ 113 天（按 48 星/天）
+- 解锁永久有效，可作头像；解锁后点动物可让它跳舞，拖动可旋转

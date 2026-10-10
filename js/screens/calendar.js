@@ -7,7 +7,7 @@ import { TOTAL_ANIMALS } from "../constants.js";
 import { go } from "../router.js";
 import { ANIMALS, animalSrc } from "../animals.js";
 
-const MASCOT = "common-06"; // 小火狐
+const MASCOT = "rare-01"; // 小火狐
 
 export function render() {
   const base = new Date();

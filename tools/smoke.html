@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8" /><title>smoke</title></head>
+<body>
+<script>
+/* 临时冒烟测试入口：注入一份存档，然后跳到真实页面 */
+const params = new URLSearchParams(location.search);
+const to = params.get('to') || 'animals';
+const owned = params.get('owned') === 'all'
+  ? ['common-01','common-02','common-03','common-04','common-05','common-06','common-07','common-08','common-09','common-10',
+     'rare-01','rare-02','rare-03','rare-04','rare-05','rare-06','rare-07',
+     'epic-01','epic-02','epic-03','epic-04','epic-05','legend-01','legend-02']
+  : ['common-01','common-02','common-03'];
+
+const sessions = {};
+const withToday = params.get('done') !== '0';
+const day = (offset, stars, done = true) => {
+  if (offset === 0 && !withToday) return;
+  const d = new Date(Date.now() - offset * 86400000);
+  const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  sessions[k] = { date: k, completed: done, config: {}, starsEarned: stars, questions: [], queue: [], pos: 0, round: 1,
+    correctIds: [], firstTryCorrect: 0, attempts: {}, pendingStars: stars, totalTimeMs: 123000 };
+};
+[0, 1, 2, 3, 4, 6, 7, 9, 10, 11, 14, 15, 16, 21, 22].forEach((o, i) => day(o, i % 3 === 0 ? 48 : 0, i % 3 === 0));
+
+const cfg = {}; for (let i = 1; i <= 8; i++) cfg[i] = 3;
+const state = {
+  version: 1,
+  currentAccountId: 'acc-smoke',
+  accounts: [{
+    id: 'acc-smoke', name: '小明', gender: 'boy', birthDate: '2017-05-01', avatarId: owned[mainIdx(owned)],
+    createdAt: Date.now(), stars: 1234, ownedAnimals: owned.slice(),
+    sessions, settings: { sound: false, volume: 0 }, questionsConfig: cfg, questionsConfigVersion: 2,
+  }],
+};
+function mainIdx(o) { return Math.min(o.length - 1, 1); }
+localStorage.setItem('luckyStar.v1', JSON.stringify(state));
+location.replace('../index.html#/' + to);
+</script>
+</body>
+</html>

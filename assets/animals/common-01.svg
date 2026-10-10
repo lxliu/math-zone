@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <path d="M22 32 L33 6 L46 30 Z" fill="#E8863C"/><path d="M54 30 L67 6 L78 32 Z" fill="#E8863C"/>
-  <path d="M27 29 L33 12 L41 29 Z" fill="#F6C3A0"/><path d="M59 29 L67 12 L73 29 Z" fill="#F6C3A0"/>
-  <circle cx="50" cy="56" r="30" fill="#F4A25A"/>
-  <circle cx="40" cy="52" r="4.4" fill="#3B3B4A"/><circle cx="60" cy="52" r="4.4" fill="#3B3B4A"/>
-  <circle cx="41.4" cy="50.5" r="1.4" fill="#fff"/><circle cx="61.4" cy="50.5" r="1.4" fill="#fff"/><ellipse cx="50" cy="66" rx="13" ry="9" fill="#FBE3CF"/>
-  <path d="M45 62 l5 4 5-4" fill="#E8863C"/><path d="M50 66 v4" stroke="#3B3B4A" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M50 70 q-6 4 -10 1 M50 70 q6 4 10 1" fill="none" stroke="#3B3B4A" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M20 60 h10 M20 66 h10 M70 60 h10 M70 66 h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="33" cy="60" r="5.5" fill="#F6A6A6" opacity=".55"/><circle cx="67" cy="60" r="5.5" fill="#F6A6A6" opacity=".55"/></svg>

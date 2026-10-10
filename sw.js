@@ -1,6 +1,8 @@
 // Service Worker —— 离线缓存
 // 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
-const CACHE = "lucky-star-v9";
+// 注意：3D 模型（assets/3d/*.glb，共约 3.3 MB）【故意不预缓存】，
+//       它们在解锁/打开 3D 时按需 fetch，然后自动进入 cache-first，避免首屏下载全量。
+const CACHE = "lucky-star-v10";
 
 const CORE = [
   "./",
@@ -44,17 +46,48 @@ const CORE = [
   "./js/screens/parent.js",
   "./js/threeViewer.js",
   "./js/models/index.js",
+  "./js/models/registry.js",
+  "./js/models/gltf.js",
   "./js/models/hedgehog.js",
   "./js/models/lib.js",
   "./js/models/animals3d.js",
   "./vendor/three.module.min.js",
   "./vendor/OrbitControls.js",
+  "./vendor/addons/GLTFLoader.js",
+  "./vendor/addons/BufferGeometryUtils.js",
+  "./vendor/addons/RoomEnvironment.js",
+  "./assets/3d/Textures/colormap.png",
   "./assets/icons/icon.svg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
   "./assets/icons/apple-touch-icon.png",
   "./assets/avatars/kid-boy.svg",
   "./assets/avatars/kid-girl.svg",
+  // 24 张动物图标（由 3D 模型渲染生成，共约 300 KB）
+  "./assets/animals/common-01.webp",
+  "./assets/animals/common-02.webp",
+  "./assets/animals/common-03.webp",
+  "./assets/animals/common-04.webp",
+  "./assets/animals/common-05.webp",
+  "./assets/animals/common-06.webp",
+  "./assets/animals/common-07.webp",
+  "./assets/animals/common-08.webp",
+  "./assets/animals/common-09.webp",
+  "./assets/animals/common-10.webp",
+  "./assets/animals/epic-01.webp",
+  "./assets/animals/epic-02.webp",
+  "./assets/animals/epic-03.webp",
+  "./assets/animals/epic-04.webp",
+  "./assets/animals/epic-05.webp",
+  "./assets/animals/legend-01.webp",
+  "./assets/animals/legend-02.webp",
+  "./assets/animals/rare-01.webp",
+  "./assets/animals/rare-02.webp",
+  "./assets/animals/rare-03.webp",
+  "./assets/animals/rare-04.webp",
+  "./assets/animals/rare-05.webp",
+  "./assets/animals/rare-06.webp",
+  "./assets/animals/rare-07.webp",
 ];
 
 const NETWORK_FIRST = new Set(["document", "script", "style", "manifest"]);
