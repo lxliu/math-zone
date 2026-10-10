@@ -18,12 +18,11 @@ export function avatarSrc(avatarId) {
   return animalSrc(avatarId);
 }
 
-export function createAccount({ name, gender, birthDate, avatarId }) {
+export function createAccount({ name, gender, avatarId }) {
   const account = {
     id: uid(),
     name: (name || "").trim() || "小朋友",
     gender: gender || "boy",
-    birthDate: birthDate || "",
     avatarId: avatarId || "kid-boy",
     createdAt: Date.now(),
     stars: 0,

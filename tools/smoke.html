@@ -28,7 +28,7 @@ const state = {
   version: 1,
   currentAccountId: 'acc-smoke',
   accounts: [{
-    id: 'acc-smoke', name: '小明', gender: 'boy', birthDate: '2017-05-01', avatarId: owned[mainIdx(owned)],
+    id: 'acc-smoke', name: '小明', gender: 'boy', avatarId: owned[mainIdx(owned)],
     createdAt: Date.now(), stars: 1234, ownedAnimals: owned.slice(),
     sessions, settings: { sound: false, volume: 0 }, questionsConfig: cfg, questionsConfigVersion: 2,
   }],
@@ -37,6 +37,14 @@ function mainIdx(o) { return Math.min(o.length - 1, 1); }
 localStorage.setItem('luckyStar.v1', JSON.stringify(state));
 // 家长设置需要口令解锁标记
 try { sessionStorage.setItem('parentUnlocked', '1'); } catch (e) {}
+// 可选的旧版残留字段，用来验证迁移会把它清掉
+if (params.get('legacy') === '1') {
+  try {
+    const raw = JSON.parse(localStorage.getItem('luckyStar.v1'));
+    raw.accounts[0].birthDate = '2017-05-01';
+    localStorage.setItem('luckyStar.v1', JSON.stringify(raw));
+  } catch (e) {}
+}
 location.replace('../index.html#/' + to);
 </script>
 </body>

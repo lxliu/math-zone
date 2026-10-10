@@ -12,7 +12,11 @@ export function loadState() {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || typeof data !== "object") return null;
-    return migrate(data);
+    const migrated = migrate(data);
+    // 迁移结果立即落盘：否则会出现「内存里已清理、存储里还是旧字段」的不一致，
+    // 要等下一次 commit 才被覆盖（旧字段可能永远赖在存储里）。
+    if (JSON.stringify(migrated) !== raw) saveState(migrated);
+    return migrated;
   } catch (e) {
     console.warn("loadState failed", e);
     return null;
@@ -50,6 +54,8 @@ function migrate(data) {
     if (!Array.isArray(a.ownedAnimals)) a.ownedAnimals = [];
     if (!a.sessions || typeof a.sessions !== "object") a.sessions = {};
     if (!a.settings) a.settings = { sound: true, volume: 0.7 };
+    // 出生日期已废弃（新建账号不再采集）：清掉老账号里的遗留字段
+    if ("birthDate" in a) delete a.birthDate;
     migrateQuestionsConfig(a);
     migrateAnimals(a);
   }

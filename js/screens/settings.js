@@ -1,5 +1,5 @@
 // 设置：账号 / 头像 / 声音 / 备份
-import { mountScreen, toast, openAccountSwitch } from "../ui.js";
+import { mountScreen, toast, openAccountSwitch, renderNavbar } from "../ui.js";
 import { currentAccount, commit } from "../store.js";
 import { KID_AVATARS, avatarSrc } from "../accounts.js";
 import { play, setSoundEnabled, setVolume } from "../audio.js";
@@ -23,10 +23,10 @@ export function render() {
   wrap.innerHTML = `
     <div class="card" style="margin-bottom:16px">
       <div class="row">
-        <span class="avatar" style="width:64px;height:64px"><img src="${avatarSrc(a.avatarId)}" alt=""></span>
+        <span class="avatar" style="width:64px;height:64px"><img id="me-avatar" src="${avatarSrc(a.avatarId)}" alt=""></span>
         <div>
           <div style="font-size:22px;font-weight:900">${a.name}</div>
-          <div class="muted">${a.gender === "girl" ? "女孩" : "男孩"}${a.birthDate ? " · " + a.birthDate : ""}</div>
+          <div class="muted">${a.gender === "girl" ? "女孩" : "男孩"}</div>
         </div>
         <span class="spacer"></span>
         <button class="btn ghost sm" id="switch">切换账号</button>
@@ -87,6 +87,11 @@ export function render() {
       commit((s) => { const acc = s.accounts.find((x) => x.id === a.id); acc.avatarId = id; });
       wrap.querySelectorAll("#avatars .avatar-choice").forEach((x) => x.classList.remove("on"));
       c.classList.add("on");
+      // 立即生效：本页顶部的大头像 + 顶栏头像
+      //（顶栏只在路由切换时重绘，所以这里必须主动调一次 renderNavbar）
+      const meImg = wrap.querySelector("#me-avatar");
+      if (meImg) meImg.src = avatarSrc(id);
+      renderNavbar();
       toast("头像已更新");
     })
   );

@@ -22,9 +22,6 @@ export function render() {
           <span class="chip" data-v="girl">👧 女孩</span>
         </div>
       </div>
-      <div class="field"><label>出生日期</label>
-        <input class="input" id="f-birth" type="date">
-      </div>
       <div class="field"><label>选择头像</label>
         <div class="chips" id="f-avatar">
           ${KID_AVATARS.map(
@@ -50,7 +47,6 @@ export function render() {
     createAccount({
       name,
       gender: sel.gender,
-      birthDate: wrap.querySelector("#f-birth").value,
       avatarId: sel.avatarId,
     });
     play("complete");

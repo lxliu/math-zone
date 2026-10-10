@@ -1,10 +1,10 @@
 // 应用入口
-import { currentAccount, commit } from "./store.js";
+import { currentAccount, commit, subscribe } from "./store.js";
 import { APP_VERSION } from "./constants.js";
 import { ANIMALS, animalById } from "./animals.js";
 import { openAnimal3D } from "./screens/animals.js";
 import { register, setGuard, startRouter, currentRoute, routePath, go } from "./router.js";
-import { renderNavbar } from "./ui.js";
+import { renderNavbar, todayStatus } from "./ui.js";
 import { setSoundEnabled, setVolume, unlockAudio } from "./audio.js";
 
 import * as setup from "./screens/setup.js";
@@ -45,6 +45,21 @@ if (acc?.settings) {
 
 // 首次手势解锁音频
 window.addEventListener("pointerdown", () => unlockAudio(), { once: true });
+
+// 订阅状态变化 —— 只在「顶栏会显示的内容」真的变了才重绘。
+// 之前 subscribe 定义了但完全没接，导致改了头像/星星/动物数后，顶栏要等路由
+// 切换才更新。用签名比较是为了避开音量滑块：它每拖动一下就 commit 一次，
+// 但签名不变，所以不会每帧重建顶栏。
+let lastNavSig = "";
+subscribe(() => {
+  const a = currentAccount();
+  const sig = a
+    ? [a.id, a.avatarId, a.name, a.stars, a.ownedAnimals.length, todayStatus(a).key].join("\u0001")
+    : "none";
+  if (sig === lastNavSig) return;
+  lastNavSig = sig;
+  renderNavbar();
+});
 
 startRouter();
 console.log(`幸运星计算乐园 v${APP_VERSION}`);
