@@ -1,6 +1,13 @@
 # 3D 素材来源与许可
 
-## Cube Pets (2.0)
+这个目录里有两类模型：
+
+1. **Kenney「Cube Pets 2.0」** —— 24 只，CC0，见下方第一节。
+2. **本仓库自制** —— 火麒麟与腾云龙两只神话动物，用脚本生成，见第二节。
+
+---
+
+## 一、Kenney「Cube Pets 2.0」
 
 - **来源页面**：https://kenney.nl/assets/cube-pets
 - **作者**：Kenney（https://kenney.nl）
@@ -86,7 +93,61 @@ FBX / OBJ 格式、每只的参考 PNG 预览、`Overview.html` 未保留（无�
 
 每只模型都包含全部 8 条动画（采样率与时长一致）。
 
-## 如何重新生成 2D 图标
+---
+
+## 二、自制模型：火麒麟 / 腾云龙
+
+| | 火麒麟 | 腾云龙 |
+|---|---|---|
+| 图鉴 id | `legend-01` | `legend-02` |
+| GLB | `assets/3d/animal-qilin.glb` | `assets/3d/animal-dragon.glb` |
+| 体积 | 89 KB | 97 KB |
+| 零件数 | 54 个立方体 | 47 个立方体 |
+| 价格 | 300 星 | 350 星 |
+
+**来源：本仓库自己生成，不是外部素材。** 生成脚本：
+
+```bash
+node tools/make-mythic-glb.mjs      # 直接重写这两个 .glb
+```
+
+脚本用纯 Node 手写 glTF 2.0 二进制容器，没有引入任何依赖。做这两只时遵循的约束：
+
+- 全部零件都是**轴对齐立方体**，无圆角无斜面 —— 与 Kenney 的方块语言一致
+- 复用 Kenney 的 `Textures/colormap.png` 色图集（外链），配色与明暗套路一致
+- 单材质 `pbrMetallicRoughness` + `metallicFactor 0` + `doubleSided`，与 Kenney 相同
+- **8 条动画的名称与时长严格对齐 Kenney**：`static 0.1 / idle 1.0 / walk 0.5 / run 0.25 / eat 0.5 / dance 0.5 / gesture-positive 0.25 / gesture-negative 0.25`，都从 t=0 开始
+- 面朝 **+Z**（与 Kenney 一致，viewer 无需旋转）
+
+两个与 Kenney 不同的有意设计：
+
+- **腾云龙**是蛇形（6 段渐细身体 + 四只向后收的小爪），有意做成**悬浮**姿态，所以 Y 最低点是 0.40 而不是 0；
+  three.js 查看器按包围盒自动落地，所以不影响显示。
+- **火麒麟**虽为四足，但做成短腿 + 长躯干 + 金色独角 + 彩色火焰鬃毛，避免与现有 6 只史诗动物混同。
+
+图标同样由 GLB 渲染生成（见下方步骤），所以与模型始终一致。
+
+### 色图集坐标（实测）
+
+这两只用到的色块全部从 `colormap.png` 采样得到。该图集是 **3 行 × 12 列**的渐变色块，行边界在 `v = 0.25 / 0.50 / 0.75`：
+
+| 用途 | 色块中心 | 实测颜色 |
+|---|---|---|
+| 龙身 | u 0.784, v 0.62 | #61cb8b |
+| 龙背/阴影 | u 0.845, v 0.62 | #3ea87a |
+| 金色（角/鳍/蹄） | u 0.905, v 0.62 | #ffc044 |
+| 深金（麒麟身） | u 0.965, v 0.62 | #ffb54a |
+| 腹部 | u 0.648, v 0.62 | #fde4c7 |
+| 腹部阴影/吻部 | u 0.712, v 0.62 | #f8d7af |
+| 眼白 | u 0.166, v 0.62 | #ffffff |
+| 瞳孔 | u 0.648, v 0.90 | #38383d |
+| 彩虹鬃毛 / 火焰 | v 0.37 行，u 分别 0.125 红 / 0.042 橙 / 0.375 浅蓝 / 0.542 紫 / 0.625 品红 | — |
+
+> 图集里的纯色区很窄（每块约 u 宽度 0.06），所以取色时都取了**纯色区中心**，并在 `cubeGeometry()` 里给顶面/侧面/底面取略微不同的 u，复现 Kenney 那种“平色带一点明暗”的观感。
+
+---
+
+## 三、如何重新生成 2D 图标
 
 `assets/animals/*.webp`（24 张，256px，共约 300 KB）不是手绘的，
 而是用 `tools/icon-gen.html` 在同一机位 / 同一光照下把上面这些 GLB 渲染出来的，
@@ -95,7 +156,12 @@ FBX / OBJ 格式、每只的参考 PNG 预览、`Overview.html` 未保留（无�
 ```bash
 python3 tools/icon-gen-server.py 4174 24
 # 浏览器打开 http://127.0.0.1:4174/tools/icon-gen.html?size=256&format=webp
+# 只重出指定几只（不动其它，避免无意义 diff）：
+#   ?size=256&format=webp&ids=legend-01,legend-02
 ```
+
+> 该工具在 `tools/` 下但需要访问 `assets/3d/*.glb`，所以页面里加了 `<base href="/">`，
+> 让运行时相对路径从仓库根解析（import 说明符也因此写成根绝对路径）。**别把 `<base>` 删了。**
 
 无头批量生成（注意：**不要加 `--virtual-time-budget`**，它会在 fetch 过程中卡住不退出）：
 

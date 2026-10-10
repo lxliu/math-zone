@@ -41,7 +41,10 @@ export const ANIMALS = [
   { id: "epic-04", tier: "epic", name: "北极熊", price: 180, emoji: "🐻", model: "animal-polar" },
   { id: "epic-05", tier: "epic", name: "大熊猫", price: 190, emoji: "🐼", model: "animal-panda" },
   { id: "epic-06", tier: "epic", name: "小老虎", price: 200, emoji: "🐯", model: "animal-tiger" },
-  // 神话（300–500）—— 现在空着，只收神龙这类不存在的动物
+  // 神话（300–500）—— 只收神龙这类不存在的动物
+  // 这两只不是 Kenney 素材，而是本仓库自制（见 tools/make-mythic-glb.mjs）
+  { id: "legend-01", tier: "legend", name: "火麒麟", price: 300, emoji: "🐲", model: "animal-qilin" },
+  { id: "legend-02", tier: "legend", name: "腾云龙", price: 350, emoji: "🐉", model: "animal-dragon" },
 ];
 
 export const TOTAL_ANIMALS = ANIMALS.length;

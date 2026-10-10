@@ -2,6 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
+  <!-- 本工具在 tools/ 下，但运行时要用 assets/3d/*.glb，
+       所以加 base 让相对路径从仓库根解析（import 说明符也随之改成根绝对路径） -->
+  <base href="/" />
   <title>gen…</title>
   <style>body{margin:0;background:#222;color:#fff;font:13px ui-monospace,Menlo,monospace}#log{padding:10px;white-space:pre-wrap}canvas{display:none}</style>
 </head>
@@ -9,10 +12,10 @@
 <canvas id="cv"></canvas>
 <pre id="log">starting…</pre>
 <script type="module">
-import * as THREE from '../vendor/three.module.min.js';
-import { RoomEnvironment } from '../vendor/addons/RoomEnvironment.js';
-import { ANIMALS } from '../js/animals.js';
-import { loadAnimalGlb } from '../js/models/gltf.js';
+import * as THREE from '/vendor/three.module.min.js';
+import { RoomEnvironment } from '/vendor/addons/RoomEnvironment.js';
+import { ANIMALS } from '/js/animals.js';
+import { loadAnimalGlb } from '/js/models/gltf.js';
 
 const SIZE = Number(new URLSearchParams(location.search).get('size') || 256);
 const FORMAT = (new URLSearchParams(location.search).get('format') || 'webp').toLowerCase();
@@ -146,9 +149,12 @@ async function save(relPath, dataUrl) {
 
 (async () => {
   const ext = FORMAT === 'webp' ? 'webp' : 'png';
-  log(`生成 ${ANIMALS.length} 张（${SIZE}px ${FORMAT}）`);
+  // ?ids=legend-01,legend-02 只重出指定的几只（避免把现有 24 张也重写一遍）
+  const only = (new URLSearchParams(location.search).get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const list = only.length ? ANIMALS.filter(a => only.includes(a.id)) : ANIMALS;
+  log(`生成 ${list.length} 张${only.length ? `（指定：${only.join(', ')}）` : ''}（${SIZE}px ${FORMAT}）`);
   let fails = 0, total = 0;
-  for (const a of ANIMALS) {
+  for (const a of list) {
     try {
       const url = await renderOne(a);
       const rel = `assets/animals/${a.id}.${ext}`;

@@ -2,20 +2,23 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
+  <!-- 本工具在 tools/ 下，但运行时要用 assets/3d/*.glb，
+       所以加 base 让相对路径从仓库根解析（import 说明符也随之改成根绝对路径） -->
+  <base href="/" />
   <title>3D 素材自检</title>
-  <link rel="stylesheet" href="../styles/tokens.css" />
-  <link rel="stylesheet" href="../styles/base.css" />
-  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/components.css" />
   <style>body{background:#fff;padding:12px}#out{font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}#overlay-root{position:relative}</style>
 </head>
 <body>
 <div id="overlay-root"></div>
 <pre id="out">running…</pre>
 <script type="module">
-import * as THREE from '../vendor/three.module.min.js';
-import { ANIMALS } from '../js/animals.js';
-import { build3DModel } from '../js/models/index.js';
-import { open3DModel } from '../js/threeViewer.js';
+import * as THREE from '/vendor/three.module.min.js';
+import { ANIMALS } from '/js/animals.js';
+import { build3DModel } from '/js/models/index.js';
+import { open3DModel } from '/js/threeViewer.js';
 
 const out = document.getElementById('out');
 const params = new URLSearchParams(location.search);
