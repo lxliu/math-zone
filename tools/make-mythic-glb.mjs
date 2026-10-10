@@ -220,7 +220,7 @@ class Glb {
     for (const k of keys) {
       for (const ni of movers) {
         const part = parts.find((p) => p.nodeIndex === ni);
-        const base = part.rot || [0, 0, 0];
+        const base = part.baseRot || part.rot || [0, 0, 0];
         const dr = (k.values[ni] && k.values[ni].rot) || [0, 0, 0];
         const q = eulerToQuat([(base[0] + dr[0]) * D2R, (base[1] + dr[1]) * D2R, (base[2] + dr[2]) * D2R]);
         if (!rotFrames.has(ni)) rotFrames.set(ni, []);
@@ -324,6 +324,7 @@ function pose(clip, role, p) {
     case "eat": {
       if (fam === "head") out.rot[0] = -28 * Math.sin(p * Math.PI);
       if (fam === "muzzle") out.rot[0] = -6 * Math.sin(p * Math.PI);
+      if (fam === "jaw") out.rot[0] = -13 * Math.sin(p * Math.PI * 2);
       if (isSerpent) out.rot[0] = -6 * Math.sin(p * Math.PI) * (idx / 4);
       break;
     }
@@ -331,6 +332,7 @@ function pose(clip, role, p) {
       if (isSerpent) out.rot[0] = sin(p - idx * 0.15) * 11;
       if (fam === "body") out.rot[0] = sin(p) * 6;
       if (fam === "head") { out.rot[0] = sin(p * 2) * 9; out.rot[2] = sin(p) * 7; }
+      if (fam === "jaw") out.rot[0] = -7 - 5 * sin(p * 2);
       if (fam === "tail") out.rot[0] = sin(p + 0.5) * 13;
       if (fam === "tailfin") out.rot[0] = sin(p + 0.7) * 18;
       if (fam === "mane") out.rot[0] = sin(p + 0.35) * 12;
@@ -341,6 +343,7 @@ function pose(clip, role, p) {
     case "gesture-positive": {
       const e = Math.sin(p * Math.PI);
       if (fam === "head") out.rot[0] = -13 * e;
+      if (fam === "jaw") out.rot[0] = -10 * e;
       if (fam === "tail") out.rot[0] = -6 * e;
       if (fam === "tailfin") out.rot[0] = -12 * e;
       if (fam === "mane") out.rot[0] = -8 * e;
@@ -349,6 +352,7 @@ function pose(clip, role, p) {
     case "gesture-negative": {
       const e = Math.sin(p * Math.PI);
       if (fam === "head") out.rot[0] = 11 * e;
+      if (fam === "jaw") out.rot[0] = 5 * e;
       if (fam === "tail") out.rot[0] = 5 * e;
       break;
     }
@@ -367,56 +371,81 @@ const rootDyFor = (clip, p) => {
 
 /* ============================ 建模 ============================ */
 // 一个立方体零件：name / swatch / 中心 pos / 尺寸 size / 基础旋转 rot(度) / role（动画用）
-const P = (name, swatch, pos, size, role, rot) => ({ name, swatch, pos, size, role: role || name, rot: rot || [0, 0, 0] });
+// pivot：可选。给了就先把零件挂到一个位于 pivot 的空节点下，旋转绕 pivot 发生
+//（下顰需要绕根部开合，绕零件中心转会穿帮）
+const P = (name, swatch, pos, size, role, rot, pivot) => ({ name, swatch, pos, size, role: role || name, rot: rot || [0, 0, 0], pivot: pivot || null });
 
-/* ---------- 腾云龙：蛇形长身、无翼、四只小爪、腾云悬浮 ----------
-   关键比例参考 Kenney：头比身体大、眼睛要大而突出。
-   身体：5 段沿 U 形弧线渐细（前高→中低→尾翘），这是与四足动物最大的区别 */
+/* ---------- 腾云龙：中式蛇形、金身红须、头不是方块、张嘴露舌与牙 ---------- */
 function dragonParts() {
   const parts = [];
-  // 更长、更细、卷得更缓 → 蛇形才读得出来
+  // 7 段身体：比上一版更长、渐细更陡（避免均匀分节的“毛毛虫感”）
   const spine = [
     // z,     y,     size, rotX
-    [0.34, 1.02, 0.44, -14],
-    [0.00, 0.94, 0.40, -2],
-    [-0.34, 0.88, 0.36, 8],
-    [-0.68, 0.86, 0.32, 18],
-    [-1.00, 0.90, 0.27, 28],
-    [-1.30, 0.98, 0.23, 36],
+    [0.34, 1.06, 0.46, -14],
+    [-0.02, 0.98, 0.41, -3],
+    [-0.38, 0.92, 0.36, 7],
+    [-0.74, 0.89, 0.31, 17],
+    [-1.10, 0.90, 0.26, 27],
+    [-1.46, 0.95, 0.21, 36],
+    [-1.80, 1.03, 0.17, 44],
   ];
   spine.forEach(([z, y, s, rx], i) => {
-    parts.push(P(`body${i + 1}`, i >= 4 ? "greenDark" : "green", [0, y, z], [s, s * 0.94, s * 1.08], `body${i + 1}`, [rx, 0, 0]));
-    parts.push(P(`belly${i + 1}`, "cream", [0, y - s * 0.40, z], [s * 0.70, s * 0.20, s * 0.88], `body${i + 1}`, [rx, 0, 0]));
-    parts.push(P(`fin${i + 1}`, "gold", [0, y + s * 0.60, z], [0.10, 0.30, 0.20], `body${i + 1}`, [rx, 0, 0]));
+    parts.push(P(`body${i + 1}`, i >= 4 ? "goldDeep" : "gold", [0, y, z], [s, s * 0.94, s * 1.10], `body${i + 1}`, [rx, 0, 0]));
+    parts.push(P(`belly${i + 1}`, "cream", [0, y - s * 0.40, z], [s * 0.70, s * 0.20, s * 0.90], `body${i + 1}`, [rx, 0, 0]));
+    parts.push(P(`fin${i + 1}`, "red", [0, y + s * 0.62, z], [0.10, 0.34, 0.22], `body${i + 1}`, [rx, 0, 0]));
   });
 
-  // 脖子 2 段（连接身体与头）
-  parts.push(P("neck1", "green", [0, 1.18, 0.48], [0.40, 0.40, 0.40], "neck", [-30, 0, 0]));
-  parts.push(P("neck0", "green", [0, 1.40, 0.66], [0.46, 0.46, 0.44], "neck", [-22, 0, 0]));
+  // 脖子 2 段
+  parts.push(P("neck1", "gold", [0, 1.24, 0.48], [0.40, 0.40, 0.40], "neck", [-30, 0, 0]));
+  parts.push(P("neck0", "gold", [0, 1.46, 0.66], [0.46, 0.46, 0.44], "neck", [-22, 0, 0]));
 
-  // 头：明显大于身体（Kenney 风格）；加宽并缩短嘶部，让脸正对镜头
-  parts.push(P("head", "green", [0, 1.68, 1.00], [0.86, 0.78, 0.78], "head"));
-  parts.push(P("muzzle", "greenDark", [0, 1.52, 1.38], [0.48, 0.34, 0.28], "muzzle"));
-  parts.push(P("brow", "gold", [0, 1.98, 1.16], [0.60, 0.09, 0.18], "head"));
-  // 大眼睛（眼白 + 瞳孔 + 高光，与 Kenney 同一套做法）
+  /* 龙头：颅骨 → 上颚 → 吻尖 逐级变窄，不再是“大立方 + 小立方” */
+  parts.push(P("skull", "gold", [0, 1.72, 0.94], [0.80, 0.72, 0.68], "head"));
+  parts.push(P("upperJaw", "gold", [0, 1.64, 1.34], [0.56, 0.32, 0.58], "muzzle", [7, 0, 0]));
+  parts.push(P("snout", "goldDeep", [0, 1.60, 1.68], [0.42, 0.26, 0.24], "muzzle", [7, 0, 0]));
+  for (const sx of [-1, 1]) {
+    parts.push(P(`nostril${sx < 0 ? "L" : "R"}`, "dark", [0.11 * sx, 1.63, 1.79], [0.10, 0.10, 0.06], "muzzle"));
+  }
+  parts.push(P("brow", "red", [0, 2.00, 1.14], [0.62, 0.10, 0.20], "head"));
+  // 口腔（把张开的缝压暗）+ 上颚牙齿
+  parts.push(P("mouthCavity", "dark", [0, 1.52, 1.34], [0.46, 0.26, 0.46], "head"));
+  for (const sx of [-1, 0, 1]) {
+    parts.push(P(`toothU${sx + 1}`, "white", [0.15 * sx, 1.50, 1.58], [0.09, 0.14, 0.08], "head"));
+  }
+  // 下颚：绕根部旋开 30°，与上颚之间就是张开的嘴
+  const JAW_PIVOT = [0, 1.58, 1.06];
+  const JAW_ROT = [30, 0, 0];
+  parts.push(P("lowerJaw", "gold", [0, 1.44, 1.34], [0.50, 0.24, 0.56], "jaw", JAW_ROT, JAW_PIVOT));
+  parts.push(P("tongue", "red", [0, 1.57, 1.38], [0.26, 0.08, 0.44], "jaw", JAW_ROT, JAW_PIVOT));
+  for (const sx of [-1, 1]) {
+    parts.push(P(`toothL${sx < 0 ? "L" : "R"}`, "white", [0.13 * sx, 1.59, 1.46], [0.09, 0.12, 0.08], "jaw", JAW_ROT, JAW_PIVOT));
+  }
+  // 大眼睛（眼白 + 瞳孔 + 高光）
   for (const sx of [-1, 1]) {
     const L = sx < 0 ? "L" : "R";
-    parts.push(P(`eye${L}`, "white", [0.26 * sx, 1.78, 1.30], [0.28, 0.28, 0.16], "head"));
-    parts.push(P(`pupil${L}`, "dark", [0.27 * sx, 1.78, 1.40], [0.16, 0.16, 0.08], "head"));
-    parts.push(P(`glint${L}`, "white", [0.32 * sx, 1.84, 1.44], [0.06, 0.06, 0.04], "head"));
+    parts.push(P(`eye${L}`, "white", [0.26 * sx, 1.84, 1.20], [0.28, 0.28, 0.16], "head"));
+    parts.push(P(`pupil${L}`, "dark", [0.27 * sx, 1.84, 1.30], [0.16, 0.16, 0.08], "head"));
+    parts.push(P(`glint${L}`, "white", [0.32 * sx, 1.90, 1.34], [0.06, 0.06, 0.04], "head"));
   }
-  // 金色鹿角（主枝 + 分叉）
+  // 红色鹿角（主枝 + 分叉）
   for (const sx of [-1, 1]) {
     const L = sx < 0 ? "L" : "R";
-    parts.push(P(`antler${L}`, "gold", [0.20 * sx, 2.18, 0.86], [0.10, 0.42, 0.10], "head", [-16, 0, 0]));
-    parts.push(P(`antlerFork${L}`, "gold", [0.36 * sx, 2.36, 0.78], [0.28, 0.09, 0.09], "head", [0, 0, 20 * sx]));
+    parts.push(P(`antler${L}`, "red", [0.22 * sx, 2.16, 0.88], [0.10, 0.42, 0.10], "head", [-16, 0, 0]));
+    parts.push(P(`antlerFork${L}`, "red", [0.38 * sx, 2.34, 0.80], [0.28, 0.09, 0.09], "head", [0, 0, 20 * sx]));
   }
-  // 龙须：从吻部两侧向后飘
+  // 红色龙须（从上颚两侧向后飘）
   for (const sx of [-1, 1]) {
-    parts.push(P(`whisker${sx < 0 ? "L" : "R"}`, "gold", [0.28 * sx, 1.46, 1.00], [0.08, 0.08, 1.00], "whiskerL", [-12, 0, 0]));
+    parts.push(P(`whisker${sx < 0 ? "L" : "R"}`, "red", [0.30 * sx, 1.56, 1.26], [0.08, 0.08, 1.10], "whiskerL", [-14, 0, 0]));
   }
+  // 颅骨后方一圈红/橙鬃毛 → 进一步远离“毛毛虫”
+  ["red", "orange", "red", "orange", "red"].forEach((c, i) => {
+    const sp = (i - 2) / 2;
+    parts.push(P(`mane${i}`, c,
+      [sp * 0.34, 1.66 + (1 - Math.abs(sp)) * 0.26, 0.50 - Math.abs(sp) * 0.10],
+      [0.20, 0.34 - Math.abs(sp) * 0.06, 0.24], "mane", [-20 + Math.abs(sp) * 12, 0, -sp * 30]));
+  });
 
-  // 四只小爪：短、且向【向后收】→ 读起来是腾云漂浮，不是四足站立
+  // 四只小爪：短、向后收 → 腾云漂浮而不是四足站立
   const legs = [
     ["legFL", 0.21, 0.22],
     ["legFR", -0.21, 0.22],
@@ -424,53 +453,51 @@ function dragonParts() {
     ["legBR", -0.18, -0.62],
   ];
   for (const [role, x, z] of legs) {
-    parts.push(P(role + "Upper", "greenDark", [x, 0.68, z + 0.04], [0.16, 0.30, 0.16], role, [22, 0, 0]));
-    parts.push(P(role + "Claw", "gold", [x, 0.48, z + 0.14], [0.22, 0.16, 0.30], role, [22, 0, 0]));
+    parts.push(P(role + "Upper", "goldDeep", [x, 0.68, z + 0.04], [0.16, 0.30, 0.16], role, [22, 0, 0]));
+    parts.push(P(role + "Claw", "red", [x, 0.48, z + 0.14], [0.22, 0.16, 0.30], role, [22, 0, 0]));
   }
 
   // 尾：2 段渐细 + 尾端火焰鳍
-  parts.push(P("tail1", "greenDark", [0, 1.08, -1.56], [0.20, 0.20, 0.32], "tail", [48, 0, 0]));
-  parts.push(P("tail2", "greenDark", [0, 1.26, -1.72], [0.16, 0.16, 0.28], "tail", [54, 0, 0]));
-  parts.push(P("tailfin", "gold", [0, 1.46, -1.80], [0.40, 0.30, 0.10], "tailfin", [52, 0, 0]));
-  parts.push(P("tailfin2", "orange", [0, 1.66, -1.86], [0.22, 0.24, 0.08], "tailfin", [52, 0, 0]));
+  parts.push(P("tail1", "goldDeep", [0, 1.14, -2.04], [0.15, 0.15, 0.32], "tail", [50, 0, 0]));
+  parts.push(P("tail2", "goldDeep", [0, 1.34, -2.22], [0.12, 0.12, 0.28], "tail", [56, 0, 0]));
+  parts.push(P("tailfin", "red", [0, 1.56, -2.32], [0.44, 0.32, 0.10], "tailfin", [54, 0, 0]));
+  parts.push(P("tailfin2", "orange", [0, 1.80, -2.38], [0.24, 0.28, 0.08], "tailfin", [54, 0, 0]));
   return parts;
 }
 
-/* ---------- 火麒麟：传统四足，但长脖子/长躯干 + 独角 + 彩虹火焰鬃毛 ---------- */
+/* ---------- 火麒麟：红金配色，四足但长脖长躯干 + 金色独角 + 金橙火焰鬃毛 ---------- */
 function qilinParts() {
   const parts = [];
-  // 躯干（比现有四足动物更长），腿做短、头做大 → 避免“像马”
-  parts.push(P("body", "goldDeep", [0, 0.92, -0.12], [0.70, 0.62, 1.30], "body"));
+  parts.push(P("body", "red", [0, 0.92, -0.12], [0.70, 0.62, 1.30], "body"));
   parts.push(P("belly", "cream", [0, 0.64, -0.06], [0.58, 0.20, 1.16], "body"));
-  // 龙鳞斑块（贴在躯干两侧）
-  const scaleCols = ["red", "gold", "magenta"];
+  // 金鳞斑块（贴在红躯干两侧）
+  const scaleCols = ["gold", "goldDeep", "cream"];
   for (const sx of [-1, 1]) {
     scaleCols.forEach((c, i) => {
       parts.push(P(`scale${sx < 0 ? "L" : "R"}${i}`, c, [0.36 * sx, 1.02 - i * 0.12, 0.20 - i * 0.38], [0.06, 0.20, 0.26], "body"));
     });
   }
-  // 背上一列火焰（神兽感）
-  ["red", "orange", "magenta"].forEach((c, i) => {
+  // 背上金橙火焰
+  ["gold", "orange", "goldDeep"].forEach((c, i) => {
     parts.push(P(`backFlame${i}`, c, [0, 1.26 - i * 0.04, 0.10 - i * 0.34], [0.10, 0.26 - i * 0.04, 0.24], "body", [-8, 0, 0]));
   });
-  // 脖子 2 段（比现有动物长）——用亮金，与深金的躯干形成双色对比
+  // 脖子 2 段（金色，与红躯干对比）
   parts.push(P("neck1", "gold", [0, 1.16, 0.38], [0.50, 0.50, 0.46], "neck", [-20, 0, 0]));
   parts.push(P("neck0", "gold", [0, 1.34, 0.60], [0.46, 0.46, 0.42], "neck", [-24, 0, 0]));
 
-  // 彩虹火焰鬃毛：改成“沿头顶向后展开的扇形”，而不是围脖子一圈
-  // （围一圈会有一半被躯干/脖子埋住，看起来像随便贴的方块）
-  const maneCols = ["red", "orange", "gold", "magenta", "purple", "blue"];
+  // 金橙火焰鬃毛：沿头顶向后展开的扇形
+  const maneCols = ["gold", "orange", "goldDeep", "orange", "goldDeep", "gold"];
   maneCols.forEach((c, i) => {
-    const spread = (i - 2.5) / 2.5; // -1 .. 1
+    const sp = (i - 2.5) / 2.5;
     parts.push(P(`mane${i}`, c,
-      [spread * 0.40, 1.42 - Math.abs(spread) * 0.10, -0.02 - Math.abs(spread) * 0.16],
-      [0.22, 0.34 - Math.abs(spread) * 0.06, 0.28], "mane", [-26 + Math.abs(spread) * 10, 0, -spread * 26]));
+      [sp * 0.40, 1.42 - Math.abs(sp) * 0.10, -0.02 - Math.abs(sp) * 0.16],
+      [0.22, 0.34 - Math.abs(sp) * 0.06, 0.28], "mane", [-26 + Math.abs(sp) * 10, 0, -sp * 26]));
   });
 
-  // 头：加宽、嘶部缩短 → 从 3/4 视角能正对镜头看到脸（Kenney 的动物都是这个读法）
+  // 头（金色）+ 短吻 + 嘴线；3/4 视角能正对镜头看到脸
   parts.push(P("head", "gold", [0, 1.62, 0.90], [0.92, 0.76, 0.76], "head"));
   parts.push(P("muzzle", "creamDark", [0, 1.48, 1.26], [0.54, 0.32, 0.26], "muzzle"));
-  parts.push(P("nose", "magenta", [0, 1.54, 1.38], [0.24, 0.14, 0.08], "muzzle"));
+  parts.push(P("nose", "red", [0, 1.54, 1.38], [0.24, 0.14, 0.08], "muzzle"));
   parts.push(P("mouth", "dark", [0, 1.38, 1.36], [0.32, 0.06, 0.06], "muzzle"));
   parts.push(P("brow", "red", [0, 1.92, 1.04], [0.62, 0.09, 0.18], "head"));
   for (const sx of [-1, 1]) {
@@ -479,32 +506,32 @@ function qilinParts() {
     parts.push(P(`pupil${L}`, "dark", [0.29 * sx, 1.74, 1.28], [0.16, 0.16, 0.08], "head"));
     parts.push(P(`glint${L}`, "white", [0.34 * sx, 1.80, 1.32], [0.06, 0.06, 0.04], "head"));
   }
-  // 金色独角：两段渐细 + 向前倾，做成最醒目的识别特征
+  // 金色独角（三段渐细、向前倾）
   parts.push(P("horn1", "gold", [0, 2.02, 1.00], [0.20, 0.34, 0.20], "horn", [-16, 0, 0]));
-  parts.push(P("horn2", "gold", [0, 2.30, 1.08], [0.13, 0.28, 0.13], "horn", [-16, 0, 0]));
+  parts.push(P("horn2", "goldDeep", [0, 2.30, 1.08], [0.13, 0.28, 0.13], "horn", [-16, 0, 0]));
   parts.push(P("hornTip", "gold", [0, 2.50, 1.14], [0.07, 0.16, 0.07], "horn", [-16, 0, 0]));
   // 一对分叉鹿角
   for (const sx of [-1, 1]) {
     const L = sx < 0 ? "L" : "R";
-    parts.push(P(`antler${L}`, "gold", [0.30 * sx, 1.94, 0.66], [0.10, 0.42, 0.10], "head", [-22, 0, 0]));
-    parts.push(P(`antlerFork${L}`, "gold", [0.46 * sx, 2.14, 0.60], [0.26, 0.09, 0.09], "head", [0, 0, 24 * sx]));
+    parts.push(P(`antler${L}`, "goldDeep", [0.30 * sx, 1.94, 0.66], [0.10, 0.42, 0.10], "head", [-22, 0, 0]));
+    parts.push(P(`antlerFork${L}`, "goldDeep", [0.46 * sx, 2.14, 0.60], [0.26, 0.09, 0.09], "head", [0, 0, 24 * sx]));
   }
-  // 小胡子
-  parts.push(P("beard", "magenta", [0, 1.34, 1.20], [0.22, 0.20, 0.12], "muzzle"));
+  // 金胡子
+  parts.push(P("beard", "goldDeep", [0, 1.34, 1.20], [0.22, 0.20, 0.12], "muzzle"));
 
-  // 四条短腿 + 金蹄（短而粗 → 可爱，且远离“马”的观感）
+  // 四条短腿：上红下金 + 金蹄
   const legs = [["legFL", 0.26, 0.38], ["legFR", -0.26, 0.38], ["legBL", 0.25, -0.64], ["legBR", -0.25, -0.64]];
   for (const [role, x, z] of legs) {
-    parts.push(P(role + "Upper", "goldDeep", [x, 0.58, z], [0.21, 0.30, 0.23], role));
+    parts.push(P(role + "Upper", "red", [x, 0.58, z], [0.21, 0.30, 0.23], role));
     parts.push(P(role + "Lower", "gold", [x, 0.32, z], [0.18, 0.26, 0.19], role));
-    parts.push(P(role + "Hoof", "gold", [x, 0.14, z - 0.02], [0.24, 0.18, 0.28], role));
+    parts.push(P(role + "Hoof", "goldDeep", [x, 0.14, z - 0.02], [0.24, 0.18, 0.28], role));
   }
 
-  // 尾：2 段 + 火焰尖
-  parts.push(P("tail1", "goldDeep", [0, 0.94, -0.92], [0.24, 0.24, 0.36], "tail", [16, 0, 0]));
-  parts.push(P("tail2", "red", [0, 1.14, -1.08], [0.19, 0.19, 0.32], "tail", [28, 0, 0]));
-  parts.push(P("tailfin", "orange", [0, 1.40, -1.18], [0.34, 0.36, 0.12], "tailfin", [26, 0, 0]));
-  parts.push(P("tailfin2", "gold", [0, 1.64, -1.22], [0.20, 0.26, 0.08], "tailfin", [26, 0, 0]));
+  // 尾：红 → 橙 → 金 的火焰尾
+  parts.push(P("tail1", "red", [0, 0.94, -0.92], [0.24, 0.24, 0.36], "tail", [16, 0, 0]));
+  parts.push(P("tail2", "orange", [0, 1.14, -1.08], [0.19, 0.19, 0.32], "tail", [28, 0, 0]));
+  parts.push(P("tailfin", "gold", [0, 1.40, -1.18], [0.34, 0.36, 0.12], "tailfin", [26, 0, 0]));
+  parts.push(P("tailfin2", "goldDeep", [0, 1.64, -1.22], [0.20, 0.26, 0.08], "tailfin", [26, 0, 0]));
   return parts;
 }
 
@@ -513,7 +540,33 @@ function build(kind, parts, outFile) {
   const glb = new Glb();
   // 预留 node 0 作为 root（提供整体上下浮动）
   glb.json.nodes.push({ name: `animal-${kind}`, children: [] });
-  parts.forEach((p) => { p.nodeIndex = glb.addPart(p); glb.json.nodes[0].children.push(p.nodeIndex); });
+  for (const p of parts) {
+    if (p.pivot) {
+      // 枢轴节点（承担旋转） + 零件作为子节点（相对枢轴偏移）
+      glb.json.nodes.push({
+        name: p.name + "Pivot",
+        translation: v3(p.pivot),
+        rotation: eulerToQuat((p.rot || [0, 0, 0]).map((d) => d * D2R)),
+        children: [],
+      });
+      const pivotIndex = glb.json.nodes.length - 1;
+      const child = {
+        name: p.name,
+        mesh: glb.meshFor(p.swatch),
+        translation: [p.pos[0] - p.pivot[0], p.pos[1] - p.pivot[1], p.pos[2] - p.pivot[2]],
+        scale: v3(p.size),
+      };
+      glb.json.nodes.push(child);
+      glb.json.nodes[pivotIndex].children.push(glb.json.nodes.length - 1);
+      glb.json.nodes[0].children.push(pivotIndex);
+      p.nodeIndex = pivotIndex;
+      p.baseRot = p.rot || [0, 0, 0];
+    } else {
+      p.nodeIndex = glb.addPart(p);
+      glb.json.nodes[0].children.push(p.nodeIndex);
+      p.baseRot = p.rot || [0, 0, 0];
+    }
+  }
   glb.json.scenes[0].nodes.push(0);
 
   for (const [clip, cfg] of Object.entries(CLIPS)) {
