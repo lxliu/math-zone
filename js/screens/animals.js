@@ -16,14 +16,29 @@ export function render() {
   const sections = TIERS.map((t) => {
     const list = animalsByTier(t.id);
     const owned = list.filter((x) => a.ownedAnimals.includes(x.id)).length;
-    const cards = list.map((animal) => animalCard(animal, a)).join("");
-    return `
-      <div class="tier-section">
+    const head = `
         <div class="tier-title">
           <span class="badge ${t.cls}">${t.label}</span>
           <span class="muted">${owned}/${list.length}</span>
           <span class="line"></span>
+        </div>`;
+    // 空档位（例如还没加动物的「神话」）给一个占位块，而不是 0/0 的空网格
+    if (!list.length) {
+      return `
+      <div class="tier-section">
+        ${head}
+        <div class="tier-empty">
+          <div class="tier-empty-ic">🔮</div>
+          <div class="tier-empty-t">这一档还空着</div>
+          <div class="tier-empty-s">只有传说中的神兽才配得上「${t.label}」</div>
+          <div class="tier-empty-s">敬请期待 ✨</div>
         </div>
+      </div>`;
+    }
+    const cards = list.map((animal) => animalCard(animal, a)).join("");
+    return `
+      <div class="tier-section">
+        ${head}
         <div class="animal-grid">${cards}</div>
       </div>`;
   }).join("");

@@ -4,41 +4,44 @@ export const TIERS = [
   { id: "common", label: "普通", cls: "tier-common" },
   { id: "rare", label: "稀有", cls: "tier-rare" },
   { id: "epic", label: "史诗", cls: "tier-epic" },
-  { id: "legend", label: "传说", cls: "tier-legend" },
+  // 神话档目前留空：只放神龙这类不存在的动物，以后再加。
+  // 内部 id 保持 legend，只改了中文名（避免动 CSS 变量与类名）。
+  { id: "legend", label: "神话", cls: "tier-legend" },
 ];
 
-// 价格阶梯：普通 40–140 / 稀有 160–280 / 史诗 300–450 / 传说 540–600（合计 5400）
-// 默认每天 48 星 → 第一天就能解锁第一只，集齐全套约 113 天。
+// 价格区间：普通 50–70 / 稀有 100–140 / 史诗 150–200 / 神话 300–500（预留）
+// 合计 2595 星：按每支 48 星算约 54 天集齐。
+// id 前缀与 tier 一致（common-* 即为普通档），新增动物时请遵守。
 // `model` 对应 assets/3d/<model>.glb
 export const ANIMALS = [
-  // 普通（家养 / 后院 / 小小只）
-  { id: "common-01", tier: "common", name: "小鸡仔", price: 40, emoji: "🐤", model: "animal-chick" },
+  // 普通（家养 / 常见小动物）—— 每两只同一个价，从 50 递增到 70
+  { id: "common-01", tier: "common", name: "小鸡仔", price: 50, emoji: "🐤", model: "animal-chick" },
   { id: "common-02", tier: "common", name: "跳跳兔", price: 50, emoji: "🐰", model: "animal-bunny" },
-  { id: "common-03", tier: "common", name: "咪咪猫", price: 60, emoji: "🐱", model: "animal-cat" },
-  { id: "common-04", tier: "common", name: "汪汪狗", price: 70, emoji: "🐶", model: "animal-dog" },
-  { id: "common-05", tier: "common", name: "哼哼猪", price: 80, emoji: "🐷", model: "animal-pig" },
-  { id: "common-06", tier: "common", name: "哞哞牛", price: 90, emoji: "🐮", model: "animal-cow" },
-  { id: "common-07", tier: "common", name: "小蜜蜂", price: 100, emoji: "🐝", model: "animal-bee" },
-  { id: "common-08", tier: "common", name: "毛毛虫", price: 110, emoji: "🐛", model: "animal-caterpillar" },
-  { id: "common-09", tier: "common", name: "泡泡鱼", price: 120, emoji: "🐟", model: "animal-fish" },
-  { id: "common-10", tier: "common", name: "小螃蟹", price: 140, emoji: "🦀", model: "animal-crab" },
+  { id: "common-03", tier: "common", name: "咪咪猫", price: 55, emoji: "🐱", model: "animal-cat" },
+  { id: "common-04", tier: "common", name: "汪汪狗", price: 55, emoji: "🐶", model: "animal-dog" },
+  { id: "common-05", tier: "common", name: "哼哼猪", price: 60, emoji: "🐷", model: "animal-pig" },
+  { id: "common-06", tier: "common", name: "哞哞牛", price: 60, emoji: "🐮", model: "animal-cow" },
+  { id: "common-07", tier: "common", name: "小蜜蜂", price: 65, emoji: "🐝", model: "animal-bee" },
+  { id: "common-08", tier: "common", name: "毛毛虫", price: 65, emoji: "🐛", model: "animal-caterpillar" },
+  { id: "common-09", tier: "common", name: "泡泡鱼", price: 70, emoji: "🐟", model: "animal-fish" },
+  { id: "common-10", tier: "common", name: "小螃蟹", price: 70, emoji: "🦀", model: "animal-crab" },
   // 稀有（野生动物）
-  { id: "rare-01", tier: "rare", name: "小火狐", price: 160, emoji: "🦊", model: "animal-fox" },
-  { id: "rare-02", tier: "rare", name: "小鹿", price: 180, emoji: "🦌", model: "animal-deer" },
-  { id: "rare-03", tier: "rare", name: "小海狸", price: 200, emoji: "🦫", model: "animal-beaver" },
-  { id: "rare-04", tier: "rare", name: "小野猪", price: 220, emoji: "🐗", model: "animal-hog" },
-  { id: "rare-05", tier: "rare", name: "考拉", price: 240, emoji: "🐨", model: "animal-koala" },
-  { id: "rare-06", tier: "rare", name: "企鹅仔", price: 260, emoji: "🐧", model: "animal-penguin" },
-  { id: "rare-07", tier: "rare", name: "巧嘴鹦鹉", price: 280, emoji: "🦜", model: "animal-parrot" },
+  { id: "rare-01", tier: "rare", name: "小火狐", price: 100, emoji: "🦊", model: "animal-fox" },
+  { id: "rare-02", tier: "rare", name: "小鹿", price: 105, emoji: "🦌", model: "animal-deer" },
+  { id: "rare-03", tier: "rare", name: "小海狸", price: 110, emoji: "🦫", model: "animal-beaver" },
+  { id: "rare-04", tier: "rare", name: "小野猪", price: 115, emoji: "🐗", model: "animal-hog" },
+  { id: "rare-05", tier: "rare", name: "考拉", price: 120, emoji: "🐨", model: "animal-koala" },
+  { id: "rare-06", tier: "rare", name: "企鹅仔", price: 125, emoji: "🐧", model: "animal-penguin" },
+  { id: "rare-07", tier: "rare", name: "巧嘴鹦鹉", price: 130, emoji: "🦜", model: "animal-parrot" },
+  { id: "rare-08", tier: "rare", name: "机灵猴", price: 140, emoji: "🐵", model: "animal-monkey" },
   // 史诗（动物园大明星）
-  { id: "epic-01", tier: "epic", name: "机灵猴", price: 300, emoji: "🐵", model: "animal-monkey" },
-  { id: "epic-02", tier: "epic", name: "长颈鹿", price: 330, emoji: "🦒", model: "animal-giraffe" },
-  { id: "epic-03", tier: "epic", name: "小狮王", price: 370, emoji: "🦁", model: "animal-lion" },
-  { id: "epic-04", tier: "epic", name: "大象", price: 410, emoji: "🐘", model: "animal-elephant" },
-  { id: "epic-05", tier: "epic", name: "北极熊", price: 450, emoji: "🐻", model: "animal-polar" },
-  // 传说（顶流）
-  { id: "legend-01", tier: "legend", name: "大熊猫", price: 540, emoji: "🐼", model: "animal-panda" },
-  { id: "legend-02", tier: "legend", name: "小老虎", price: 600, emoji: "🐯", model: "animal-tiger" },
+  { id: "epic-01", tier: "epic", name: "长颈鹿", price: 150, emoji: "🦒", model: "animal-giraffe" },
+  { id: "epic-02", tier: "epic", name: "小狮王", price: 160, emoji: "🦁", model: "animal-lion" },
+  { id: "epic-03", tier: "epic", name: "大象", price: 170, emoji: "🐘", model: "animal-elephant" },
+  { id: "epic-04", tier: "epic", name: "北极熊", price: 180, emoji: "🐻", model: "animal-polar" },
+  { id: "epic-05", tier: "epic", name: "大熊猫", price: 190, emoji: "🐼", model: "animal-panda" },
+  { id: "epic-06", tier: "epic", name: "小老虎", price: 200, emoji: "🐯", model: "animal-tiger" },
+  // 神话（300–500）—— 现在空着，只收神龙这类不存在的动物
 ];
 
 export const TOTAL_ANIMALS = ANIMALS.length;
@@ -82,4 +85,20 @@ export const LEGACY_ANIMAL_MAP = {
   "epic-04": "rare-04", // 鲸鱼（已移除）→ 小野猪
   "legend-01": "legend-01", // 神龙（已移除）→ 大熊猫
   "legend-02": "legend-02", // 独角兽（已移除）→ 小老虎
+};
+
+// ---------------------------------------------------------------------------
+// 第二段迁移（v2 → v3）：24 只重新划分档位后的 id 重编号
+// 只有 7 只变了（机灵猴降到稀有尾；史诗其余前移；熊猫/老虎从神话档并入史诗）。
+// 其余 id 自我映射，也一并列出以便对照。
+// 迁移时会先跑 LEGACY_ANIMAL_MAP 再跑这张表，所以 v1 时代的老存档也能一路迁到最新。
+// ---------------------------------------------------------------------------
+export const RENUMBER_V3 = {
+  "epic-01": "rare-08", // 机灵猴 → 稀有档尾
+  "epic-02": "epic-01", // 长颈鹿 → 史诗 01
+  "epic-03": "epic-02", // 小狮王 → 史诗 02
+  "epic-04": "epic-03", // 大象 → 史诗 03
+  "epic-05": "epic-04", // 北极熊 → 史诗 04
+  "legend-01": "epic-05", // 大熊猫 → 史诗 05（神话档改为留空）
+  "legend-02": "epic-06", // 小老虎 → 史诗 06（神话档改为留空）
 };

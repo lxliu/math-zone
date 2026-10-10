@@ -84,10 +84,12 @@ export function render() {
       <div class="chips" id="coll">
         <span class="chip" data-act="unlock-all">解锁全部</span>
         <span class="chip" data-act="lock-all">清空收藏</span>
-        <span class="chip" data-act="unlock-tier" data-tier="common">解锁普通</span>
-        <span class="chip" data-act="unlock-tier" data-tier="rare">解锁稀有</span>
-        <span class="chip" data-act="unlock-tier" data-tier="epic">解锁史诗</span>
-        <span class="chip" data-act="unlock-tier" data-tier="legend">解锁传说</span>
+        ${TIERS.map((t) => {
+          const n = ANIMALS.filter((x) => x.tier === t.id).length;
+          return n
+            ? `<span class="chip" data-act="unlock-tier" data-tier="${t.id}">解锁${t.label}（${n}）</span>`
+            : `<span class="chip off" title="该档位暂时没有动物">${t.label}（暂无）</span>`;
+        }).join("")}
       </div>
     </div>
 

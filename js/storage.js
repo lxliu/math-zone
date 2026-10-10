@@ -1,10 +1,13 @@
 // localStorage 读写 + schema 版本/迁移
-import { ANIMALS, LEGACY_ANIMAL_MAP, animalById } from "./animals.js";
+import { ANIMALS, LEGACY_ANIMAL_MAP, RENUMBER_V3, animalById } from "./animals.js";
 
 const KEY = "luckyStar.v1";
 export const SCHEMA_VERSION = 1;
-// 动物图鉴版本：1 = 旧的 20 只，2 = Kenney Cube Pets 的 24 只
-export const ANIMAL_ROSTER_VERSION = 2;
+// 动物图鉴版本：
+//   1 = 旧的 20 只
+//   2 = Kenney Cube Pets 的 24 只（旧四档）
+//   3 = 24 只重新划分档位（普通/稀有/史诗 + 神话留空）
+export const ANIMAL_ROSTER_VERSION = 3;
 
 export function loadState() {
   try {
@@ -63,16 +66,27 @@ function migrate(data) {
 }
 
 // ---------------------------------------------------------------------------
-// 动物图鉴迁移：20 只 → 24 只（Kenney Cube Pets）
-//  1) 旧 id 按 LEGACY_ANIMAL_MAP 换成新 id（同种动物保留，已移除的换同档新动物）
-//  2) 升档/去重导致的缺口，用【同档位】里最便宜且未拥有的动物补足，尽量保住档位结构
-//  3) 总数仍不足时再按全局最便宜补足
-//  4) 头像若指向旧动物，一并迁移；迁移后不拥有的动物头像回退到第一个拥有的动物
+// 动物图鉴迁移：分阶段递进（v1 → v2 → v3）
+//   v1 → v2：旧的 20 只换成 Kenney 的 24 只（旧 id 换新 id，已移除的换同档新动物）
+//   v2 → v3：24 只重新划分档位，7 只 id 重编号
+// 映射完再：
+//   2) 升档/去重导致的缺口，用【同档位】里最便宜且未拥有的动物补足，尽量保住档位结构
+//   3) 总数仍不足时再按全局最便宜补足
+//   4) 头像若指向旧动物，一并迁移；迁移后不拥有的动物头像回退到第一个拥有的动物
 // 原则：绝不退款、绝不清空——孩子到手的动物数量只会变多不会变少。
 // ---------------------------------------------------------------------------
 function migrateAnimals(acc) {
-  if (acc.animalRosterVersion === ANIMAL_ROSTER_VERSION) return;
+  const from = acc.animalRosterVersion || 1;
+  if (from >= ANIMAL_ROSTER_VERSION) return;
   if (!Array.isArray(acc.ownedAnimals)) acc.ownedAnimals = [];
+
+  // 链式映射：按存档版本次第跑各阶段的映射表；结果必须仍是合法动物
+  const applyMaps = (id) => {
+    let cur = id;
+    if (from < 2) cur = LEGACY_ANIMAL_MAP[cur] ?? cur;
+    if (from < 3) cur = RENUMBER_V3[cur] ?? cur;
+    return animalById(cur) ? cur : null;
+  };
 
   const oldIds = acc.ownedAnimals.slice();
   const totalBefore = oldIds.length;
@@ -80,16 +94,14 @@ function migrateAnimals(acc) {
   const owned = [];
   const addOwned = (id) => { if (id && !owned.includes(id)) owned.push(id); };
 
-  for (const id of oldIds) {
-    const mapped = LEGACY_ANIMAL_MAP[id] || (animalById(id) ? id : null);
-    if (mapped) addOwned(mapped);
-  }
+  for (const id of oldIds) addOwned(applyMaps(id));
 
-  // 按档位补足
+  // 按档位补足（want 必须用映射后的档位来算，否则会误判出缺口而多发动物）
   const tiers = ["common", "rare", "epic", "legend"];
   const countIn = (list, tier) => list.filter((id) => animalById(id)?.tier === tier).length;
+  const mappedOldIds = oldIds.map(applyMaps).filter((id) => animalById(id));
   for (const tier of tiers) {
-    const want = countIn(oldIds.map((id) => LEGACY_ANIMAL_MAP[id] || id).filter((id) => animalById(id)), tier);
+    const want = countIn(mappedOldIds, tier);
     const got = countIn(owned, tier);
     if (got >= want) continue;
     const pool = ANIMALS
@@ -110,9 +122,9 @@ function migrateAnimals(acc) {
   // 保持原顺序（按价格从低到高，图鉴观感一致）
   acc.ownedAnimals = owned.sort((a, b) => (animalById(a)?.price ?? 0) - (animalById(b)?.price ?? 0));
 
-  // 头像迁移
+  // 头像迁移（同样要过两段映射）
   if (acc.avatarId && !String(acc.avatarId).startsWith("kid-")) {
-    const mapped = LEGACY_ANIMAL_MAP[acc.avatarId] || acc.avatarId;
+    const mapped = applyMaps(acc.avatarId) || acc.avatarId;
     acc.avatarId = acc.ownedAnimals.includes(mapped) ? mapped : (acc.ownedAnimals[0] || "kid-boy");
   }
 

@@ -2,7 +2,7 @@
 // 策略：HTML/JS/CSS 用 network-first（保证更新能生效）；其它资源 cache-first。
 // 注意：3D 模型（assets/3d/*.glb，共约 3.3 MB）【故意不预缓存】，
 //       它们在解锁/打开 3D 时按需 fetch，然后自动进入 cache-first，避免首屏下载全量。
-const CACHE = "lucky-star-v14";
+const CACHE = "lucky-star-v15";
 
 const CORE = [
   "./",
@@ -79,8 +79,7 @@ const CORE = [
   "./assets/animals/epic-03.webp",
   "./assets/animals/epic-04.webp",
   "./assets/animals/epic-05.webp",
-  "./assets/animals/legend-01.webp",
-  "./assets/animals/legend-02.webp",
+  "./assets/animals/epic-06.webp",
   "./assets/animals/rare-01.webp",
   "./assets/animals/rare-02.webp",
   "./assets/animals/rare-03.webp",
@@ -88,6 +87,7 @@ const CORE = [
   "./assets/animals/rare-05.webp",
   "./assets/animals/rare-06.webp",
   "./assets/animals/rare-07.webp",
+  "./assets/animals/rare-08.webp",
 ];
 
 const NETWORK_FIRST = new Set(["document", "script", "style", "manifest"]);
