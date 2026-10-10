@@ -33,6 +33,13 @@ export function clearState() {
   try { localStorage.removeItem(KEY); } catch (e) {}
 }
 
+// 迁移入口：loadState 会自动调用；导入备份等场景也可显式调用，
+// 避免“导入后不刷新页面 → 迁移没跑 → 旧动物 id / 头像错位”这类问题。
+export function migrateData(data) {
+  if (!data || typeof data !== "object") return data;
+  return migrate(data);
+}
+
 function migrate(data) {
   if (!data.version) data.version = SCHEMA_VERSION;
   if (!Array.isArray(data.accounts)) data.accounts = [];

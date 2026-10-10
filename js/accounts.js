@@ -2,6 +2,7 @@
 import { commit, state } from "./store.js";
 import { uid } from "./utils.js";
 import { ANIMAL_ROSTER_VERSION } from "./storage.js";
+import { animalSrc } from "./animals.js";
 
 // 初始可选的 2 个小朋友头像
 export const KID_AVATARS = [
@@ -12,7 +13,9 @@ export const KID_AVATARS = [
 export function avatarSrc(avatarId) {
   if (!avatarId) return "assets/avatars/kid-boy.svg";
   if (avatarId.startsWith("kid-")) return `assets/avatars/${avatarId}.svg`;
-  return `assets/animals/${avatarId}.svg`;
+  // 动物头像：路径统一由 animals.js 提供，不在各处重复拼接
+  // （2026-10 换图标时就是因为这里另拼了一份 .svg 导致头像全部 404）
+  return animalSrc(avatarId);
 }
 
 export function createAccount({ name, gender, birthDate, avatarId }) {

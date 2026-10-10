@@ -1,6 +1,7 @@
 // 导出 / 导入备份
 import { state, commit } from "./store.js";
 import { todayKey } from "./utils.js";
+import { migrateData } from "./storage.js";
 
 export function exportBackup() {
   const data = JSON.stringify(state, null, 2);
@@ -20,8 +21,11 @@ export function importBackup(file) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result));
-        if (!data || !Array.isArray(data.accounts)) throw new Error("格式不正确");
+        const raw = JSON.parse(String(reader.result));
+        if (!raw || !Array.isArray(raw.accounts)) throw new Error("格式不正确");
+        // 旧备份里可能是旧的动物 id / 头像，这里就地跑一遍迁移，
+        // 不依赖调用方刷新页面，也不依赖 loadState。
+        const data = migrateData(raw);
         commit((s) => {
           s.version = data.version || s.version;
           s.accounts = data.accounts;
