@@ -149,7 +149,12 @@ vendor/                    three.js r160 + OrbitControls + addons（本地相对
 
 - `npm run dev` 后：`node tools/gen-check.mjs 20000` —— 采样校验 8 类题目（唯一题量、结构断言、T3 子类占比）。
 - **本地页面“改了不动”先怀疑缓存**：确认已用 `npm run dev`（no-store）而不是 `python3 -m http.server`；
-  再看设置页底部的版本号是否等于 `APP_VERSION`。旧 SW 可用调试面板「注销 SW 并刷新」清掉。
+  再看设置页底部的版本号是否等于 `APP_VERSION`。
+- **被旧 SW 污染的 origin**（最老那版 SW 是「所有请求 cache-first」，会让 `F5` 完全无效）：
+  打开 `tools/reset-sw.html`（如 `http://127.0.0.1:4173/tools/reset-sw.html`）——
+  它会注销所有 SW、删光 Cache Storage 并跳回首页。该页只靠内联脚本，
+  所以即使旧 SW 控制着页面，也能靠“新 URL 未命中缓存 → 回源”拿到。
+  另：换一个端口（新 origin）也能立即回到干净状态。
 - `node --check <file>` 校验语法（js / tools / sw / vendor 都能过）。
 - 改完 import 后确认目标存在，且 `sw.js` 里 `CORE` 的相对路径都能命中真实文件。
 - `tools/3d-selftest.html` 3D 素材自检（逐只校验模型/动画/落地面）。

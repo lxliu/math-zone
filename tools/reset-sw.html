@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>清理本地缓存 · 幸运星计算乐园</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #FFF7E8; color: #3A3A4A;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+      padding: 24px; box-sizing: border-box;
+    }
+    .card { background: #fff; border-radius: 22px; box-shadow: 0 10px 30px rgba(80,60,20,.12); padding: 26px; width: min(620px, 94vw); }
+    h1 { font-size: 22px; margin: 0 0 10px; }
+    p { line-height: 1.7; font-size: 14px; margin: 8px 0; }
+    .muted { color: #8A8A9A; font-size: 13px; }
+    button {
+      margin-top: 12px; padding: 12px 22px; border: none; border-radius: 14px;
+      background: #FF9F43; color: #fff; font-size: 18px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 5px 0 #E07F23;
+    }
+    button:active { transform: translateY(3px); box-shadow: 0 1px 0 #E07F23; }
+    pre {
+      margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: #F7F5F0;
+      font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow: auto;
+    }
+    .ok { color: #1B8A4B; font-weight: 800; }
+    a { color: #E07F23; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧹 清理本地缓存</h1>
+    <p>这个页面用来解决「本地改了代码，但页面还是旧的」。它会：</p>
+    <p>1. 注销本网站的所有 <b>Service Worker</b>；<br />2. 删除所有 <b>Cache Storage</b>；<br />3. 连带清一次浏览器 HTTP 缓存引用，然后自动跳回首页。</p>
+    <p class="muted">说明：它必须由本机服务器提供（例如 <code>npm run dev</code>），因为被缓存污染的旧页面不会去联网。</p>
+    <button id="go">开始清理并返回首页</button>
+    <pre id="log">等待开始…</pre>
+  </div>
+
+  <script>
+    // 只依赖内联脚本：被旧 SW 缓存污染的页面也能靠「新 URL 未命中缓存 → 回源」拿到本页
+    const logEl = document.getElementById("log");
+    const log = (m) => { logEl.textContent += "\n" + m; };
+    // 从 /tools/reset-sw.html 反推应用根（兼容 GitHub Pages 子路径）
+    const appRoot = location.pathname.replace(/tools\/reset-sw\.html$/, "");
+
+    async function reset() {
+      logEl.textContent = "开始清理…";
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          log("找到 Service Worker: " + regs.length);
+          const rs = await Promise.all(regs.map((r) => r.unregister()));
+          log("已注销: " + rs.filter(Boolean).length + " 个");
+        } else {
+          log("此浏览器没有 Service Worker");
+        }
+      } catch (e) { log("注销 SW 失败：" + e.message); }
+
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          log("找到缓存桶: " + JSON.stringify(keys));
+          const ds = await Promise.all(keys.map((k) => caches.delete(k)));
+          log("已删除: " + ds.filter(Boolean).length + " 个缓存桶");
+        }
+      } catch (e) { log("删除缓存失败：" + e.message); }
+
+      log("✅ 完成，正在回到首页：" + appRoot);
+      // 稍等一下让日志可见，再回首页（此时已无 SW，拿到的必然是新代码）
+      setTimeout(() => { location.replace(appRoot); }, 900);
+    }
+
+    document.getElementById("go").addEventListener("click", reset);
+    reset(); // 打开即自动执行
+  </script>
+</body>
+</html>
