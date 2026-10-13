@@ -17,11 +17,17 @@
 ## 本地运行与部署
 
 ```bash
-npm run dev     # python3 -m http.server 4173 → http://localhost:4173
+npm run dev     # node tools/dev-server.mjs → http://127.0.0.1:4173
 npm run serve   # 同上
 ```
 
 ES Modules 必须经 http(s) 访问，双击 `index.html` 不可用。
+
+> **为什么不用 `python3 -m http.server`**：它只发 `Last-Modified`、不发 `Cache-Control`，
+> 浏览器会对 js/css 做启发式缓存；而页面内 import 都是**没有 `?v=` 的相对路径**
+> （`import "./screens/setup.js"`），于是会出现“改了代码、本地页面不动、F5 也没用”，
+> 而线上（靠 `?v=` + SW 四层击穿）正常。`tools/dev-server.mjs` 对所有响应加 `no-store`，
+> 本地改完刷新即生效；它零依赖，也不影响 SW 的 Cache Storage 预缓存。
 
 - 部署：push 到 `main` → `.github/workflows/pages.yml` 自动发布到 GitHub Pages。
 - 仓库：`git@github.com:lxliu/math-zone.git`，线上：https://lxliu.github.io/math-zone/
@@ -142,6 +148,8 @@ vendor/                    three.js r160 + OrbitControls + addons（本地相对
 ## 工具与自检
 
 - `npm run dev` 后：`node tools/gen-check.mjs 20000` —— 采样校验 8 类题目（唯一题量、结构断言、T3 子类占比）。
+- **本地页面“改了不动”先怀疑缓存**：确认已用 `npm run dev`（no-store）而不是 `python3 -m http.server`；
+  再看设置页底部的版本号是否等于 `APP_VERSION`。旧 SW 可用调试面板「注销 SW 并刷新」清掉。
 - `node --check <file>` 校验语法（js / tools / sw / vendor 都能过）。
 - 改完 import 后确认目标存在，且 `sw.js` 里 `CORE` 的相对路径都能命中真实文件。
 - `tools/3d-selftest.html` 3D 素材自检（逐只校验模型/动画/落地面）。
