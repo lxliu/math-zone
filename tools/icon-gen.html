@@ -58,18 +58,10 @@ const fill = new THREE.DirectionalLight(0xffe9c9, 0.45);
 fill.position.set(-4, 3, -4);
 scene.add(fill);
 
-function radialTex(stops, size = 256) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d').createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  for (const [at, col] of stops) g.addColorStop(at, col);
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
+// 说明：这里原本有个 radialTex() 用来生成“接地阴影”贴图，已删除——
+// 接地面会把阴影烘进图标（浮动时影子跟着飘、幽灵图透底），所以导出必须“纯动物 + 透明底”。
+// 若将来要恢复，把一块 PlaneGeometry 放在兽脚下，材质用径向渐变
+// rgba(72,52,24,.34) → .14 → 0 即可（详见 assets/3d/CREDITS.md）。
 
 /* 统一的画面构图：所有动物按"包围球半径归一化"，图标视觉大小一致 */
 const SPHERE_R = 1.0;          // 归一化后的包围球半径
@@ -105,14 +97,10 @@ async function renderOne(animal) {
   });
   scene.add(group);
 
-  const half = SPHERE_R * 0.92;
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(half * 2.6, half * 2.6),
-    new THREE.MeshBasicMaterial({ map: radialTex([[0, 'rgba(72,52,24,.34)'], [0.5, 'rgba(72,52,24,.14)'], [1, 'rgba(72,52,24,0)']]), transparent: true, depthWrite: false })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -half;
-  scene.add(ground);
+  // 注意：这里**故意不放接地面/阴影**。
+  // 曾经放过一块径向渐变的“接地阴影”平面，结果阴影被烤进图标里：
+  // 图鉴卡片浮动时会连阴影一起飘，而且半透明幽灵图（未解锁）会透出底纹。
+  // 所以图标必须是“纯动物 + 透明底”。3D 弹窗里的阴影是 three.js 实时算的，不受影响。
 
   camera.position.set(
     DIST * Math.cos(EL) * Math.sin(AZ),
@@ -130,8 +118,7 @@ async function renderOne(animal) {
   }
 
   // 清理
-  scene.remove(group); scene.remove(ground);
-  ground.geometry.dispose(); ground.material.map.dispose(); ground.material.dispose();
+  scene.remove(group);
   group.traverse((o) => {
     if (o.geometry) o.geometry.dispose();
     if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { if (m && m.map) m.map.dispose(); m?.dispose(); } }

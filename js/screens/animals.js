@@ -1,7 +1,7 @@
 // 动物（商店 + 图鉴 合并）：解锁仪式 + 悬浮自转 3D 查看
 import { mountScreen, toast, modal } from "../ui.js";
 import { currentAccount } from "../store.js";
-import { TIERS, animalsByTier, animalSrc, animalFullSrc, animalById, tierClass, TOTAL_ANIMALS } from "../animals.js";
+import { TIERS, animalsByTier, animalSrc, animalFullSrc, animalById, tierClass, tierThemeClass, TOTAL_ANIMALS } from "../animals.js";
 import { play as sfx } from "../audio.js";
 import { tryUnlock } from "../shop.js";
 import { confetti } from "../anim.js";
@@ -99,12 +99,13 @@ export function render() {
 function animalCard(animal, account) {
   const owned = account.ownedAnimals.includes(animal.id);
   // 修复：已解锁不再叠加 locked（否则命中灰度滤镜变黑白）
-  const cls = ["animal-card", owned ? `owned ${tierClass(animal.tier)}` : "locked"].join(" ");
+  // 等级主题（背景/纹理/边框）**所有卡都加**，未解锁也能看出档次
+  const cls = ["animal-card", tierThemeClass(animal.tier), owned ? `owned ${tierClass(animal.tier)}` : "locked"].join(" ");
   const tier = TIERS.find((t) => t.id === animal.tier);
   return `
     <div class="${cls}" data-animal="${animal.id}">
       <span class="badge ${tier.cls} tier">${tier.label}</span>
-      ${owned ? `<span class="badge check">✓</span>` : `<span class="badge price" style="background:#FFC107;color:#6b5200">${animal.price}⭐</span>`}
+      ${owned ? `<span class="badge check">✓</span>` : `<span class="badge price">${animal.price}⭐</span>`}
       <div class="pic" data-emoji="${animal.emoji}"></div>
       <div class="nm">${animal.name}</div>
     </div>`;
@@ -136,7 +137,7 @@ function unlockRitual(animal) {
   box.innerHTML = `
     <h2 style="font-size:22px;margin-bottom:6px">✨ 新动物！</h2>
     <div class="reveal-stage">
-      <div class="reveal-card ${animal.tier}">
+      <div class="reveal-card ${animal.tier} ${tierThemeClass(animal.tier)}">
         <div class="reveal-face reveal-back">🎁</div>
         <div class="reveal-face reveal-front"><img class="reveal-img" alt="${animal.name}"></div>
       </div>
@@ -176,6 +177,7 @@ function open3DFloat(animal) {
   const root = document.getElementById("overlay-root");
   const backdrop = el("div", "backdrop");
   const box = el("div", "viewer");
+  box.classList.add(tierThemeClass(animal.tier), "float-viewer");
   box.innerHTML = `
     <button class="viewer-close btn ghost sm">✕</button>
     <div class="float-stage">

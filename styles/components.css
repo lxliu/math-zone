@@ -40,6 +40,41 @@
 .tier-epic { background: var(--tier-epic); }
 .tier-legend { background: var(--tier-legend); }
 
+/* ================= 等级主题（图鉴卡片 / 3D 查看器 / 解锁仪式 / 2D 漂浮 共用） =================
+   同档 = 同背景 + 同纹理 + 同边框；.tier-* 只给徽章用，别往里塞别的样式。
+   改配色只改 tokens.css 的 --tier-*-soft / --tier-*-deep / --tier-*-pat。 */
+.theme-common, .theme-rare, .theme-epic, .theme-legend { --tier-pattern-size: auto; }
+.theme-common {
+  --tier: var(--tier-common); --tier-soft: var(--tier-common-soft); --tier-deep: var(--tier-common-deep);
+  --tier-pat: var(--tier-common-pat);
+  --tier-bg: linear-gradient(160deg, #FFFFFF 0%, var(--tier-soft) 100%);
+  --tier-pattern: radial-gradient(var(--tier-common-pat) 1.1px, transparent 1.7px);
+  --tier-pattern-size: 14px 14px;
+}
+.theme-rare {
+  --tier: var(--tier-rare); --tier-soft: var(--tier-rare-soft); --tier-deep: var(--tier-rare-deep);
+  --tier-pat: var(--tier-rare-pat);
+  --tier-bg: linear-gradient(160deg, #FFFFFF 0%, var(--tier-soft) 100%);
+  --tier-pattern: repeating-linear-gradient(45deg, transparent 0 7px, var(--tier-rare-pat) 7px 14px);
+}
+.theme-epic {
+  --tier: var(--tier-epic); --tier-soft: var(--tier-epic-soft); --tier-deep: var(--tier-epic-deep);
+  --tier-pat: var(--tier-epic-pat);
+  --tier-bg: linear-gradient(160deg, #FFFFFF 0%, var(--tier-soft) 100%);
+  --tier-pattern:
+    radial-gradient(rgba(123, 63, 208, .34) 1.7px, transparent 2.6px),
+    radial-gradient(rgba(123, 63, 208, .10) 4.5px, transparent 6px);
+  --tier-pattern-size: 30px 30px, 60px 60px;
+}
+.theme-legend {
+  --tier: var(--tier-legend); --tier-soft: var(--tier-legend-soft); --tier-deep: var(--tier-legend-deep);
+  --tier-pat: var(--tier-legend-pat);
+  --tier-bg: linear-gradient(160deg, #FFFFFF 0%, var(--tier-soft) 55%, #FFF3E4 100%);
+  --tier-pattern:
+    radial-gradient(130% 90% at 16% 12%, rgba(255, 111, 174, .30), transparent 62%),
+    radial-gradient(120% 100% at 84% 86%, rgba(255, 190, 110, .28), transparent 60%);
+}
+
 /* ================= 导航栏元素 ================= */
 .nav-account {
   display: inline-flex; align-items: center; gap: 10px;
@@ -162,27 +197,50 @@
 /* ================= 动物卡 ================= */
 .animal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
 .animal-card {
-  position: relative; background: #fff; border-radius: var(--radius-md); padding: 10px;
-  box-shadow: var(--shadow-sm); cursor: pointer; text-align: center; border: 3px solid transparent;
+  position: relative; background: var(--tier-bg, #fff); border-radius: var(--radius-md); padding: 10px;
+  box-shadow: var(--shadow-sm); cursor: pointer; text-align: center;
+  border: 3px solid var(--tier-soft, transparent);
   transition: transform .08s ease;
 }
 .animal-card:active { transform: scale(.97); }
+/* 图片区（“窗口”）：同档同底色 + 同纹理。
+   注意：这里绝不能加 position（会让它盖住左上/右上两个徽章 → 价格看不到了）。 */
+.animal-card .pic {
+  border-radius: var(--radius-sm); padding: 6px; box-sizing: border-box;
+  background-color: var(--tier-soft, transparent);
+  background-image: var(--tier-pattern, none);
+  background-size: var(--tier-pattern-size, auto);
+}
 .animal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; }
-.animal-card.locked img { filter: grayscale(1) opacity(.35); }
-.animal-card .price { position: absolute; top: 8px; right: 8px; }
-.animal-card .tier { position: absolute; top: 8px; left: 8px; }
-.animal-card .check { position: absolute; top: 8px; right: 8px; background: var(--green); }
+.animal-card.locked img { filter: grayscale(1) opacity(.5); }
+/* 徽章必须在最上层（z-index 双保险）：曾经因为图片区盖住它，导致价格完全看不到 */
+.animal-card .price { position: absolute; top: 8px; right: 8px; z-index: 2; background: #FFC107; color: #6B5200; }
+.animal-card .tier { position: absolute; top: 8px; left: 8px; z-index: 2; }
+.animal-card .check { position: absolute; top: 8px; right: 8px; z-index: 2; background: var(--green); }
 .animal-card .nm { font-weight: 800; margin-top: 6px; font-size: 15px; }
 
-/* 已解锁：彩色 + 稀有度光晕 + 轻微浮动 */
+/* 已解锁：等级色描边 + 等级色柔和投影 + 轻微浮动 */
 .animal-card.glow-common { --glow: var(--tier-common); }
 .animal-card.glow-rare { --glow: var(--tier-rare); }
 .animal-card.glow-epic { --glow: var(--tier-epic); }
 .animal-card.glow-legend { --glow: var(--tier-legend); }
 .animal-card.owned {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px var(--glow, var(--green)), 0 0 22px var(--glow, var(--green));
+  border-color: var(--tier-deep, var(--green));
+  box-shadow: 0 0 0 3px var(--tier-soft, transparent), 0 10px 22px var(--tier-pat, var(--shadow-sm));
 }
+/* 未解锁：整张卡统一灰掉（不参与等级配色），和已解锁拉开明显差距 */
+.animal-card.locked {
+  --tier-bg: linear-gradient(160deg, #FAFAFC 0%, #ECECF1 100%);
+  --tier-soft: #F1F1F5;
+  --tier-deep: #C4C4CF;
+  --tier-pat: rgba(140, 140, 152, .16);
+  --tier-pattern: none;                 /* 未解锁不带纹理：灰点会透过幽灵图看到，很脏 */
+  border-style: dashed; border-color: var(--tier-deep);
+  box-shadow: none;
+}
+.animal-card.locked .tier { background: #B9B9C4; }           /* 档位徽章也转灰，只留文字 */
+.animal-card.locked .price { background: #DCDCE4; color: #6C6C7A; }
+.animal-card.locked .nm { color: var(--muted); font-weight: 700; }
 .animal-card.owned img { filter: none !important; animation: card-float 3.2s ease-in-out infinite; }
 @keyframes card-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @media (prefers-reduced-motion: reduce) { .animal-card.owned img { animation: none; } }
@@ -194,11 +252,24 @@
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
 
-/* ================= 悬浮自转 3D 查看 ================= */
-.viewer { position: relative; width: min(760px, 92vw); background: #fff; border-radius: var(--radius-lg); padding: 16px 20px 20px; box-shadow: var(--shadow); }
-.viewer-close { position: absolute; top: 12px; right: 12px; z-index: 2; }
-.float-stage { position: relative; height: 380px; display: flex; align-items: center; justify-content: center; perspective: 1000px; overflow: hidden; }
-.float-obj { width: 220px; height: 220px; transform-style: preserve-3d; will-change: transform; cursor: grab; touch-action: none; }
+/* ================= 悬浮自转 3D 查看 / 真 3D 舞台（three.js） ================= */
+.viewer {
+  position: relative; display: flex; flex-direction: column;
+  width: min(1120px, 94vw);
+  max-height: 92vh; max-height: 92dvh;
+  background: var(--tier-bg, #fff);
+  border: 3px solid var(--tier-deep, transparent);
+  border-radius: var(--radius-lg); padding: 16px 20px 18px;
+  box-shadow: 0 18px 50px rgba(80, 60, 20, .22), 0 0 0 5px var(--tier-soft, transparent);
+}
+.viewer-close { position: absolute; top: 12px; right: 12px; z-index: 3; }
+.float-stage { position: relative; flex: 1 1 auto; height: clamp(320px, 58dvh, 700px); min-height: 240px; display: flex; align-items: center; justify-content: center; perspective: 1000px; overflow: hidden; border-radius: var(--radius-md); background: radial-gradient(circle at 50% 32%, #FFFFFF, var(--tier-soft, #eef4fb) 72%); }
+.float-stage::before { content: ""; position: absolute; inset: 0; background-image: var(--tier-pattern, none); background-size: var(--tier-pattern-size, auto); pointer-events: none; }
+/* 2D 漂浮回退（WebGL/GLB 不可用时）：弹窗比真 3D 窄一些，物体才不显得孤零零 */
+.viewer.float-viewer { width: min(820px, 94vw); }
+.float-viewer .float-stage { height: min(56dvh, 520px); }
+.float-viewer .float-obj { width: 260px; height: 260px; }
+.float-obj { width: 220px; height: 220px; transform-style: preserve-3d; will-change: transform; cursor: grab; touch-action: none; position: relative; z-index: 1; }
 .float-obj:active { cursor: grabbing; }
 .float-img { width: 100%; height: 100%; object-fit: contain; -webkit-user-drag: none; filter: drop-shadow(0 16px 16px rgba(0,0,0,.18)); }
 .float-glow { position: absolute; width: 300px; height: 300px; border-radius: 50%; filter: blur(36px); opacity: .5; }
@@ -225,18 +296,18 @@
 .reveal-card.flipped { transform: rotateY(180deg); }
 .reveal-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
 .reveal-back { background: linear-gradient(135deg, #FFD54A, #FF9F43); font-size: 84px; color: #fff; }
-.reveal-front { background: #fff; transform: rotateY(180deg); overflow: hidden; }
-.reveal-front img { width: 72%; height: 72%; object-fit: contain; }
-.reveal-front::after { content: ""; position: absolute; top: 0; left: -60%; width: 45%; height: 100%; background: linear-gradient(120deg, transparent, rgba(255,255,255,.9), transparent); animation: shine 1.1s ease .45s; }
+.reveal-front { background: var(--tier-bg, #fff); transform: rotateY(180deg); overflow: hidden; }
+.reveal-front::before { content: ""; position: absolute; inset: 0; background-image: var(--tier-pattern, none); background-size: var(--tier-pattern-size, auto); }
+.reveal-front img { width: 72%; height: 72%; object-fit: contain; position: relative; z-index: 1; }
+.reveal-front::after { content: ""; position: absolute; top: 0; left: -60%; width: 45%; height: 100%; background: linear-gradient(120deg, transparent, rgba(255,255,255,.9), transparent); animation: shine 1.1s ease .45s; z-index: 2; }
 @keyframes shine { to { left: 120%; } }
-.reveal-card.common .reveal-front { box-shadow: 0 0 0 4px var(--tier-common); }
-.reveal-card.rare .reveal-front { box-shadow: 0 0 0 4px var(--tier-rare), 0 0 34px var(--tier-rare); }
-.reveal-card.epic .reveal-front { box-shadow: 0 0 0 4px var(--tier-epic), 0 0 40px var(--tier-epic); }
-.reveal-card.legend .reveal-front { box-shadow: 0 0 0 4px var(--tier-legend), 0 0 48px var(--tier-legend); }
+/* 等级描边（同档同色；.reveal-card 上带 .theme-<tier>） */
+.reveal-card .reveal-front { box-shadow: 0 0 0 4px var(--tier-deep, var(--line)), 0 0 36px var(--tier-pat, transparent); }
 
 /* ================= 真 3D 舞台（three.js） ================= */
-.three-stage { position: relative; width: 100%; height: 380px; border-radius: var(--radius-md); overflow: hidden; background: radial-gradient(circle at 50% 32%, #ffffff, #eef4fb 70%); }
-.three-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.three-stage { position: relative; width: 100%; flex: 1 1 auto; height: clamp(320px, 60dvh, 720px); min-height: 240px; border-radius: var(--radius-md); overflow: hidden; background: radial-gradient(circle at 50% 30%, #FFFFFF, var(--tier-soft, #eef4fb) 72%); }
+.three-stage::before { content: ""; position: absolute; inset: 0; background-image: var(--tier-pattern, none); background-size: var(--tier-pattern-size, auto); pointer-events: none; z-index: 0; }
+.three-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; position: relative; z-index: 1; }
 
 /* 加载态：先给个星星转圈，避免白屏 */
 .three-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; transition: opacity .35s ease; z-index: 2; }
@@ -249,3 +320,12 @@
 .viewer .three-stage canvas { opacity: 0; transition: opacity .45s ease; }
 .viewer.ready .three-stage canvas { opacity: 1; }
 .viewer-hint { text-align: center; font-size: 13px; font-weight: 700; color: var(--muted, #8a7f6d); margin-top: 4px; }
+
+/* 矮屏（iPad 横屏 768 高）与小屏兜底：优先保证名字 / 提示 / 按钮都在屏内 */
+@media (max-height: 760px) {
+  .three-stage, .float-stage { height: min(50vh, 420px); }
+  .viewer { padding: 12px 16px 14px; }
+}
+@media (max-width: 640px) {
+  .viewer { width: 96vw; }
+}

@@ -25,6 +25,19 @@
   --tier-rare: #4FA3F7;
   --tier-epic: #B36BFF;
   --tier-legend: #FF6FAE;
+  /* 稀有度：等级主题用的浅底 + 深描边（.theme-* 里取用；改等级配色只改这几行） */
+  --tier-common-soft: #EFF3F7;
+  --tier-common-deep: #6B7887;
+  --tier-common-pat: rgba(107, 120, 135, .20);
+  --tier-rare-soft: #E7F2FF;
+  --tier-rare-deep: #2A76C9;
+  --tier-rare-pat: rgba(42, 118, 201, .16);
+  --tier-epic-soft: #F3EBFF;
+  --tier-epic-deep: #7B3FD0;
+  --tier-epic-pat: rgba(123, 63, 208, .20);
+  --tier-legend-soft: #FFEFF6;
+  --tier-legend-deep: #D8457E;
+  --tier-legend-pat: rgba(216, 69, 126, .22);
 
   /* 幸运星 */
   --star: #FFC107;

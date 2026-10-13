@@ -56,6 +56,11 @@ export function animalSrc(id) { return `assets/animals/${id}.webp`; }
 // 全身图：解锁仪式 / 3D 悬浮兼底用（图标本身已足够清晰，直接复用同一张）
 export function animalFullSrc(id) { return `assets/animals/${id}.webp`; }
 export function tierClass(tier) { return `glow-${tier}`; }
+// 等级主题：图鉴卡片 / 3D 查看器 / 解锁仪式 / 2D 漂浮 共用同一套（见 styles/components.css 的 .theme-*）
+// 同档 = 同背景 + 同纹理 + 同边框；改配色只改 tokens.css 的 --tier-*-soft / --tier-*-deep
+export function tierThemeClass(tier) {
+  return `theme-${tierById(tier) ? tier : "common"}`;
+}
 // 3D 模型：assets/3d/animal-*.glb（贴图 assets/3d/Textures/colormap.png 由 GLB 相对引用）
 export function animalModelSrc(id) {
   const a = animalById(id);

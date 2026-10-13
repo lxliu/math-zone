@@ -79,6 +79,16 @@ vendor/                    three.js r160 + OrbitControls + addons（本地相对
 
 ## 图鉴与动物系统
 
+## 图鉴与动物系统
+
+- **等级主题（图鉴卡片 / 3D 查看器 / 解锁仪式 / 2D 漂浮）**：
+  - 唯一入口是 `styles/components.css` 里的 `.theme-<tier>`（设置 `--tier-bg` / `--tier-pattern` / `--tier-deep`），
+    由 `js/animals.js` 的 `tierThemeClass(tier)` 生成类名，四处 JS 都调它。
+  - **改配色只改 `styles/tokens.css`** 的 `--tier-<tier>-soft / -deep / -pat`；
+    `.tier-common` 等类**只属于徽章**（`background: var(--tier-*)`），不要往里塞主题样式。
+  - 同档必须长得一样（卡片底色/纹理/边框）；3D 场景内的地面/接地阴影/补光按档位走色，
+    定义在 `js/threeViewer.js` 顶部的 `GROUND_BY_TIER`（中心一律近白，避免给模型染色）。
+  - 图标是带透明通道的 WebP，所以卡片底纹能透出来；若以后换成不透明图，底纹会看不见。
 - `js/animals.js`：`TIERS`（common/rare/epic/legend 四档）、`ANIMALS`（26 只）、
   `TOTAL_ANIMALS`、`animalById`、`animalSrc`、`animalModelSrc`、`LEGACY_ANIMAL_MAP`。
 - 关键约定：**id 前缀必须等于 tier**（`common-*`/`rare-*`/`epic-*`/`legend-*`）；

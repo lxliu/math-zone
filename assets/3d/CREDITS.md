@@ -155,12 +155,12 @@ node tools/make-mythic-glb.mjs      # 直接重写这两个 .glb
 
 ## 三、如何重新生成 2D 图标
 
-`assets/animals/*.webp`（24 张，256px，共约 300 KB）不是手绘的，
+`assets/animals/*.webp`（26 张，256px，共约 150 KB）不是手绘的，
 而是用 `tools/icon-gen.html` 在同一机位 / 同一光照下把上面这些 GLB 渲染出来的，
 所以**图鉴图标与 3D 模型永远一致**。换模型或调机位后重跑一次即可：
 
 ```bash
-python3 tools/icon-gen-server.py 4174 24
+python3 tools/icon-gen-server.py 4174 26
 # 浏览器打开 http://127.0.0.1:4174/tools/icon-gen.html?size=256&format=webp
 # 只重出指定几只（不动其它，避免无意义 diff）：
 #   ?size=256&format=webp&ids=legend-01,legend-02
@@ -181,3 +181,19 @@ sleep 25 && pkill -f "user-data-dir=/tmp/icongen"
 
 机位参数在 `tools/icon-gen.html` 顶部：包围球归一化半径 `SPHERE_R = 1.0`、
 相机距离 `3.35×`、水平偏角 `-28°`、俯仰 `13°`，姿势固定用 `static` 片段第 0.1 秒。
+
+### ⚠️ 图标必须是「纯动物 + 透明底」，不要烘接地面阴影
+
+`icon-gen.html` 里**故意不放接地面/阴影**。历史上放过一块径向渐变 `rgba(72,52,24,.34→0)`
+的平面，结果阴影被烘进图标：
+
+- 图鉴卡片有浮动动画（`card-float`），动物和烘进去的阴影是同一张图 → **影子跟着动物一起飘**；
+- 未解锁卡是半透明灰色幽灵图，底纹/影子会**透到动物身上**，很脏；
+- 头像、解锁翻牌、2D 漂浮回退也用的是同一张图，全部受影响。
+
+**自检**（重新生成后跑一次，确认底部没有阴影带）：把图标画到 canvas 上，统计底部 30 行里
+`alpha ∈ (8, 250)` 的像素数。有接地阴影时**每行都有 256 个**（整幅共 7000+）；
+纯动物时最多几十个（那只是脚部抗锯齿）。
+
+3D 弹窗里的阴影是 three.js 实时算的（`js/threeViewer.js` 的 ground + contact 贴片），
+与图标无关，不受此约束。

@@ -4,8 +4,20 @@ import { OrbitControls } from "../vendor/OrbitControls.js";
 import { RoomEnvironment } from "../vendor/addons/RoomEnvironment.js";
 import { build3DModel, has3DModel } from "./models/index.js";
 import { CHEER_CLIP, LOOP_CLIP, TAP_CLIP } from "./models/registry.js";
+import { tierById, tierThemeClass, TIERS } from "./animals.js";
 import { el } from "./utils.js";
 import { play as sfx } from "./audio.js";
+
+/* ------------------------------------------------------------------ */
+/* 地面 / 灯光按等级走色                                                */
+/*   中心一律近白，避免给模型本身染色；只有外圈、接地阴影、补光跟档位走。 */
+/* ------------------------------------------------------------------ */
+const GROUND_BY_TIER = {
+  common: { stops: ["#fffdf8", "#f6f9fc", "#e5ebf1"], shadow: "70,80,92", hemi: 0xe8eef5, fill: 0xffffff },
+  rare:   { stops: ["#ffffff", "#ebf5ff", "#cfe6ff"], shadow: "40,80,130", hemi: 0xdcecff, fill: 0xe8f4ff },
+  epic:   { stops: ["#fffdff", "#f4ecff", "#dfcbff"], shadow: "92,52,152", hemi: 0xeee2ff, fill: 0xf3e9ff },
+  legend: { stops: ["#fffdfb", "#fff0f7", "#ffe3c9"], shadow: "150,60,100", hemi: 0xffe9f3, fill: 0xfff1e0 },
+};
 
 /* ------------------------------------------------------------------ */
 /* 小工具：生成径向渐变贴图（地面光晕 / 接地阴影）                        */
@@ -34,12 +46,16 @@ export async function open3DModel(animal, opts = {}) {
   const root = document.getElementById("overlay-root");
   const backdrop = el("div", "backdrop");
   const box = el("div", "viewer");
+  const tier = tierById(animal.tier) || TIERS[0];
+  const groundPal = GROUND_BY_TIER[animal.tier] || GROUND_BY_TIER.common;
+  // 等级主题：弹窗边框/底色/纹理跟着档位走（与图鉴卡片、解锁仪式同一套）
+  box.classList.add(tierThemeClass(animal.tier));
   box.innerHTML = `
     <button class="viewer-close btn ghost sm">✕</button>
     <div class="three-stage">
       <div class="three-loading"><span class="three-spin">⭐</span><span class="three-loading-text">正在唤醒它…</span></div>
     </div>
-    <div class="viewer-name">${animal.name}</div>
+    <div class="viewer-name">${animal.name} <span class="badge ${tier.cls}">${tier.label}</span></div>
     <div class="viewer-hint">👆 点一点它 · 拖动可以转圈圈</div>
     <div class="viewer-ctrls">
       <button class="btn ghost sm" data-act="reset">↺ 重置视角</button>
@@ -83,8 +99,8 @@ export async function open3DModel(animal, opts = {}) {
     console.warn("[3d] 环境贴图生成失败，跳过", e);
   }
 
-  /* --- 光照 --- */
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe8ff, 0.85));
+  /* --- 光照（底色跟档位微调，幅度小，保证金红模型不发灰） --- */
+  scene.add(new THREE.HemisphereLight(0xffffff, groundPal.hemi, 0.85));
   const key = new THREE.DirectionalLight(0xffffff, 2.4);
   key.position.set(3.5, 6.5, 4.5);
   key.castShadow = true;
@@ -99,7 +115,7 @@ export async function open3DModel(animal, opts = {}) {
   key.shadow.normalBias = 0.02;
   key.shadow.radius = 3;
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffe9c9, 0.5);
+  const fill = new THREE.DirectionalLight(groundPal.fill, 0.5);
   fill.position.set(-4, 3, -3.5);
   scene.add(fill);
 
@@ -137,11 +153,11 @@ export async function open3DModel(animal, opts = {}) {
   const size = bbox.getSize(new THREE.Vector3());
   const groundY = bbox.min.y;
 
-  // 地面：暖色径向渐变（中心亮、边缘淡）
+  // 地面：径向渐变（中心亮、边缘淡）；颜色按等级走
   const groundTex = radialTexture([
-    [0.0, "#fffaf0"],
-    [0.55, "#fdf1dc"],
-    [1.0, "#f2e2c6"],
+    [0.0, groundPal.stops[0]],
+    [0.55, groundPal.stops[1]],
+    [1.0, groundPal.stops[2]],
   ]);
   const ground = new THREE.Mesh(
     new THREE.CircleGeometry(Math.max(2.6, size.x * 2.4), 56),
@@ -154,9 +170,9 @@ export async function open3DModel(animal, opts = {}) {
 
   // 接地阴影贴片（在真实投影之外再补一层柔和的"落地感"）
   const contactTex = radialTexture([
-    [0.0, "rgba(70,50,20,.42)"],
-    [0.45, "rgba(70,50,20,.20)"],
-    [1.0, "rgba(70,50,20,0)"],
+    [0.0, `rgba(${groundPal.shadow},.42)`],
+    [0.45, `rgba(${groundPal.shadow},.20)`],
+    [1.0, `rgba(${groundPal.shadow},0)`],
   ]);
   const contact = new THREE.Mesh(
     new THREE.PlaneGeometry(Math.max(2.0, size.x * 2.1), Math.max(2.0, size.z * 2.1)),
