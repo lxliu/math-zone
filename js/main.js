@@ -19,7 +19,7 @@ import * as dev from "./screens/dev.js";
 
 register("setup", setup.render);
 register("today", today.render);
-register("parent", parent.render);
+register("parent", parent.render, parent.cleanup);
 register("play", play.render, play.cleanup);
 register("result", result.render);
 register("calendar", calendar.render);

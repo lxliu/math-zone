@@ -94,8 +94,15 @@ vendor/                    three.js r160 + OrbitControls + addons（本地相对
 ## 家长门控与调试
 
 - `js/gate.js`：`GATE_PASSWORD = "test123456"`，家长设置与调试面板共用。
-- 家长页 `#/parent`：草稿 + 显式「保存」，有未保存徽标与离开确认；解锁状态放
-  `sessionStorage.parentUnlocked`，入口是「设置 → 👨‍👩‍👧 家长设置」。
+  另有**首次配置一次性令牌**：`grantFirstSetup(accountId)` / `isFirstSetup(accountId)` / `clearFirstSetup()`
+  （`sessionStorage.parentOnboard`，值为账号 id）。
+- 家长页 `#/parent`：
+  - **刚建号那一次免密码**：`js/screens/setup.js` 建完账号后 `grantFirstSetup(id)` 再 `go("parent")`；
+    页面显示首次引导（默认题量偏多的提醒、“以后怎么改 + 密码”、iOS/Android 加到主屏幕提示）。
+  - 其余情况要密码：`promptParentPassword` 成功后 `grantParentAccess()`（`sessionStorage.parentUnlocked`）。
+  - 草稿 + 显式「保存」，有未保存徽标与离开确认。
+  - `register("parent", …, parent.cleanup)`：cleanup 里 `clearFirstSetup()`，保证令牌**只在这一次访问内有效**
+    （刷新同一标签页仍有效，离开即失效）。改注册时别漏掉 cleanup。
 - 调试面板只在 `location.hostname === "127.0.0.1"` 且 URL 带 `?dev=1` 时可用。
   不要把调试入口当成家长的常规使用方法。
 

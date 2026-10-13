@@ -135,6 +135,23 @@
 .info-sub-head { display: flex; align-items: center; gap: 8px; }
 .info-weight { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--primary); color: #fff; }
 .info-tip { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-sm); background: #FFF9EC; border-left: 3px solid var(--primary); font-size: 13px; line-height: 1.6; }
+
+/* ================= 家长设置：首次配置引导 ================= */
+.onboard-head { font-size: 18px; font-weight: 900; margin-bottom: 8px; }
+.onboard-line { font-size: 14px; line-height: 1.7; }
+.onboard-list { margin: 6px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.9; }
+.onboard-list li::marker { color: var(--primary); }
+.onboard-pw {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 800; padding: 2px 8px; border-radius: 8px;
+  background: #FFF6E6; border: 1px solid #F2E2C6; color: #7A5A1E;
+  white-space: nowrap;
+}
+.onboard-hint {
+  margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: #EFF6FF; border-left: 3px solid var(--blue);
+  font-size: 13px; line-height: 1.7;
+}
 .toast {
   position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   background: rgba(58,58,74,.94); color: #fff; padding: 12px 20px; border-radius: var(--radius-pill);

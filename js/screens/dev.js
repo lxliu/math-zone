@@ -6,6 +6,7 @@ import { ANIMALS, TIERS, animalById } from "../animals.js";
 import { play as sfx } from "../audio.js";
 import { todayKey, el } from "../utils.js";
 import { isDevEnabled, checkDevPassword } from "../dev.js";
+import { grantParentAccess } from "../gate.js";
 import { openAnimal3D } from "./animals.js";
 import { resetTodaySession } from "../game.js";
 import { getConfig, totalStars, USE_GLB_MODELS } from "../config.js";
@@ -202,6 +203,8 @@ export function render() {
       toast(`已标记今天完成 +${t}⭐`);
       render();
     } else if (act === "parent") {
+      // 调试面板已经过密码门，直接放行家长设置（否则会被弹回设置页）
+      grantParentAccess();
       go("parent");
     } else if (act === "export") exportBackup();
     else if (act === "import") wrap.querySelector("#dev-import").click();
