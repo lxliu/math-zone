@@ -41,11 +41,17 @@ export function render() {
   wireChips(wrap.querySelector("#f-gender"), (v) => { sel.gender = v; });
   wireChips(wrap.querySelector("#f-avatar"), (v) => { sel.avatarId = v; });
 
-  wrap.querySelector("#f-create").addEventListener("click", () => {
+  // 防止连点/双击重复建号（iPad 上很容易双击）：第一次点下就锁住按钮
+  let creating = false;
+  const createBtn = wrap.querySelector("#f-create");
+  createBtn.addEventListener("click", () => {
+    if (creating) return;
     unlockAudio();
     play("button");
     const name = wrap.querySelector("#f-name").value.trim();
     if (!name) { toast("请先输入名字"); wrap.querySelector("#f-name").focus(); return; }
+    creating = true;
+    createBtn.disabled = true;
     const account = createAccount({
       name,
       gender: sel.gender,
